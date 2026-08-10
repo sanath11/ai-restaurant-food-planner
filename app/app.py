@@ -465,14 +465,11 @@ def api_recommend():
 @app.route("/api/ask", methods=["POST"])
 @require_auth
 def api_ask():
-    """Answer questions about selected restaurants using their reviews."""
+    """Answer questions about restaurants or general dining queries using LLM."""
     try:
         data = request.get_json()
         restaurant_ids = data.get("restaurant_ids", [])
         question = data.get("question", "")
-        
-        if not restaurant_ids:
-            return jsonify({"error": "No restaurants selected"}), 400
         
         if not question:
             return jsonify({"error": "No question provided"}), 400
@@ -482,6 +479,44 @@ def api_ask():
         logger.info(f"📋 Restaurant IDs: {restaurant_ids}")
         logger.info(f"❓ Question: {question}")
         
+        # Handle general questions (no restaurant context)
+        if not restaurant_ids:
+            logger.info("💬 Handling general question without restaurant context")
+            try:
+                from databricks.sdk import WorkspaceClient
+                from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+                
+                w = WorkspaceClient()
+                
+                system_prompt = (
+                    "You are a helpful restaurant and dining assistant. "
+                    "Provide helpful, practical advice about meal planning, dining preferences, restaurant selection, and food-related topics. "
+                    "Be concise, friendly, and actionable in your responses."
+                )
+                
+                response = w.serving_endpoints.query(
+                    name="databricks-meta-llama-3-3-70b-instruct",
+                    messages=[
+                        ChatMessage(role=ChatMessageRole.SYSTEM, content=system_prompt),
+                        ChatMessage(role=ChatMessageRole.USER, content=question)
+                    ],
+                    max_tokens=500,
+                    temperature=0.7
+                )
+                
+                answer = response.choices[0].message.content
+                logger.info(f"✅ Generated answer: {answer[:100]}...")
+                
+                return jsonify({
+                    "success": True,
+                    "answer": answer
+                })
+                
+            except Exception as llm_error:
+                logger.error(f"❌ LLM error: {llm_error}", exc_info=True)
+                return jsonify({"error": f"Failed to generate response: {str(llm_error)}"}), 500
+        
+        # Handle restaurant-specific questions (with context)
         client = get_lakebase_client()
         
         # Get restaurant details and reviews for each selected restaurant
