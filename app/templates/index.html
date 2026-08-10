@@ -1,0 +1,1938 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dining Intelligence • AI Restaurant Planner</title>
+  <style>
+    :root {
+      /* Zomato-Inspired Palette */
+      --primary: #E23744;
+      --primary-dark: #CB202D;
+      --primary-light: #FF5864;
+      --secondary: #1C1C1C;
+      --accent: #FFD700;
+      --success: #28A745;
+      --error: #DC3545;
+      --info: #17A2B8;
+      
+      /* Surfaces */
+      --surface: #F8F8F8;
+      --surface-elevated: #FFFFFF;
+      --border: #E8E8E8;
+      
+      /* Text */
+      --text-primary: #1C1C1C;
+      --text-secondary: #696969;
+      --text-tertiary: #9C9C9C;
+      --text-inverse: #FFFFFF;
+      
+      /* Spacing */
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+      --spacing-2xl: 48px;
+      
+      /* Radius */
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      
+      /* Shadows */
+      --shadow-sm: 0 2px 4px rgba(28, 28, 28, 0.08);
+      --shadow-md: 0 4px 12px rgba(28, 28, 28, 0.08);
+      --shadow-lg: 0 8px 24px rgba(28, 28, 28, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 1600px;
+      margin: 0 auto;
+      background: var(--surface);
+      color: var(--text-primary);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    
+    .container {
+      padding: var(--spacing-lg) var(--spacing-xl);
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: var(--spacing-2xl) var(--spacing-xl);
+      margin-bottom: var(--spacing-2xl);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(226, 55, 68, 0.15);
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-inverse);
+      margin: 0 0 var(--spacing-sm) 0;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+    
+    .header-subtitle {
+      font-size: 1.125rem;
+      color: rgba(255,255,255,0.9);
+      max-width: 600px;
+    }
+
+    /* Section Styling */
+    .section {
+      background: var(--surface-elevated);
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--spacing-xl);
+      border: 1px solid var(--border);
+    }
+    
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    /* Form Controls */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .input-field {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      color: var(--text-primary);
+      background: var(--surface-elevated);
+      transition: all 0.2s ease;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: var(--surface-elevated);
+      box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      background: var(--primary);
+      color: var(--text-inverse);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      box-shadow: none;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(226, 55, 68, 0.25);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--text-inverse);
+    }
+    
+    .btn-secondary:hover {
+      background: #0D0D0D;
+      box-shadow: 0 4px 12px rgba(28, 28, 28, 0.25);
+    }
+
+    /* Filter Pills */
+    .filter-section {
+      display: flex;
+      gap: var(--spacing-sm);
+      flex-wrap: wrap;
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--border);
+      margin-top: var(--spacing-md);
+    }
+    
+    .filter-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+    }
+    
+    .filter-pill {
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      border: 1.5px solid var(--border);
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    
+    .filter-pill:hover {
+      border-color: var(--primary);
+      background: rgba(226, 55, 68, 0.05);
+    }
+    
+    .filter-pill.active {
+      background: var(--primary);
+      color: var(--text-inverse);
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(226, 55, 68, 0.25);
+    }
+    
+    .filter-pill input { display: none; }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
+    }
+    
+    .kpi-card {
+      background: var(--surface-elevated);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--accent-color, var(--primary));
+    }
+    
+    .kpi-card.restaurants { --accent-color: #E23744; }
+    .kpi-card.avg-rating { --accent-color: #1C8B4D; }
+    
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .kpi-label {
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+    
+    .kpi-icon {
+      font-size: 1.5rem;
+      opacity: 0.3;
+    }
+    
+    .kpi-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .kpi-meta {
+      font-size: 0.8125rem;
+      color: var(--text-tertiary);
+    }
+
+    /* Restaurant Cards */
+    .restaurants-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: var(--spacing-lg);
+    }
+    
+    .restaurant-card {
+      background: var(--surface-elevated);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .restaurant-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .restaurant-image-placeholder {
+      height: 180px;
+      background: linear-gradient(135deg, #FFE5E7 0%, #FFD4D8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      position: relative;
+    }
+    
+    .restaurant-content {
+      padding: var(--spacing-lg);
+    }
+    
+    .restaurant-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-sm);
+      line-height: 1.3;
+    }
+    
+    .rating-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #1C8B4D;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      color: var(--text-inverse);
+      font-size: 0.875rem;
+    }
+    
+    .categories {
+      display: flex;
+      gap: var(--spacing-xs);
+      flex-wrap: wrap;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .category-tag {
+      padding: 5px 12px;
+      background: #F5F5F5;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .restaurant-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-md);
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--border);
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-label {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+    
+    .stat-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .price-indicator {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+
+
+    /* Selection */
+    .selection-checkbox {
+      position: absolute;
+      top: var(--spacing-md);
+      left: var(--spacing-md);
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      z-index: 10;
+      accent-color: var(--primary);
+    }
+    
+    .restaurant-card.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.1);
+    }
+    
+    .compare-bar {
+      position: fixed;
+      bottom: var(--spacing-lg);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--secondary);
+      color: var(--text-inverse);
+      padding: var(--spacing-md) var(--spacing-xl);
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 24px rgba(28, 28, 28, 0.3);
+      display: none;
+      align-items: center;
+      gap: var(--spacing-md);
+      z-index: 1000;
+      animation: slideUp 0.3s ease;
+    }
+    
+    .compare-bar.visible {
+      display: flex;
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateX(-50%) translateY(100px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .compare-bar-text {
+      font-weight: 600;
+    }
+    
+    .compare-bar .btn {
+      background: var(--primary);
+      color: var(--text-inverse);
+      padding: 10px 24px;
+      font-weight: 700;
+    }
+    
+    .compare-bar .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    /* Empty/Error States */
+    .empty-state, .error-state {
+      text-align: center;
+      padding: var(--spacing-2xl);
+    }
+    
+    .empty-state-icon, .error-icon {
+      font-size: 3rem;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .empty-state-title, .error-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .error-state {
+      background: rgba(239, 83, 80, 0.05);
+      border: 2px solid rgba(239, 83, 80, 0.2);
+      border-radius: var(--radius-lg);
+    }
+    
+    .error-title {
+      color: var(--error);
+    }
+
+    /* Comparison Summary */
+    .comparison-summary {
+      background: linear-gradient(135deg, #FFF5F5 0%, #FFF9F9 100%);
+      border-left: 4px solid var(--primary);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-xl);
+    }
+    
+    .comparison-summary h3 {
+      color: var(--primary);
+      margin-bottom: var(--spacing-md);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .comparison-summary p {
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    /* Comparison Table */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: var(--spacing-lg);
+      background: var(--surface-elevated);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    
+    .comparison-table th {
+      background: var(--secondary);
+      color: var(--text-inverse);
+      padding: var(--spacing-md);
+      text-align: left;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.8125rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .comparison-table td {
+      padding: var(--spacing-md);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .comparison-table tr:hover {
+      background: var(--surface);
+    }
+    
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Recommendations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: var(--spacing-lg);
+      margin-top: var(--spacing-lg);
+    }
+    
+    .recommendation-card {
+      background: linear-gradient(135deg, var(--surface-elevated) 0%, var(--surface) 100% Cards */
+    .recommendations-grid {
+      display: grid;
+     transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .recommendation-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+    }
+    
+    .recommendation-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary);
+    }
+    
+    .recommendation-card:first-child {
+      border-color: #FFD700;
+      box-shadow: 0 8px 16px rgba(255, 215, 0, 0.2);
+    }
+    
+    .recommendation-card:first-child:hover {
+      box-shadow: 0 12px 24px rgba(255, 215, 0, 0.3 grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: var(--spacing-xl);
+      margin-top: var(--spacing-lg);
+    }
+    
+    .recommendation: linear-gradient(13) 0%, var(--surface) 100%);
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-dmd);
+      border: 2px solid var(--border);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .recommendation-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+    }
+    
+    .recommendation-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary);
+    }
+    
+    .recommendation-card:first-child {
+      border-color: #FFD700;
+      box-shadow: 0 8px 16px rgba(255, 215, 0, 0.2);
+    }
+    
+    .recommendation-card:first-child:hover {
+      box-shadow: 0 12px 24px rgba(255, 215, 0, 0.3);
+    }
+    
+    .recommendation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .recommendation-rank {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .rank-badge {
+      font-size: 83rem;
+      line-height: 1;
+    }
+    
+    .recommendation-rank {
+      display: flex;
+      align-items: center;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .rank-badge {
+      font-size: 2rem;
+      line-height: 1;
+    }
+    
+    .recommendation-score {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+    
+    .score-factors {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-lg);
+      padding-top: var(--spacing-lg);
+      border-top: 2px solid var(--border);
+    }
+    
+    .score-factor {
+      background: var(--surface);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    
+    .score-factor-label {
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .score-factor-value {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.2s ease;
+    }
+    
+    .modal-overlay.visible {
+      display: flex;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal-content {
+      background: var(--surface-elevated);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .modal-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .modal-close:hover {
+      color: var(--text-primary);
+      transform: scale(1.1);
+    }
+    
+    .modal-body {
+      padding: var(--spacing-lg);
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .modal-footer {
+      padding: var(--spacing-lg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--spacing-md);
+    }
+    
+    .question-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--surface-elevated);
+      resize: vertical;
+      transition: all 0.2s ease;
+    }
+    
+    .question-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1);
+    }
+    
+    .answer-box {
+      background: linear-gradient(135deg, #FFF5F5 0%, #FFF9F9 100%);
+      border-left: 4px solid var(--primary);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin-top: var(--spacing-md);
+    }
+    
+    .answer-box h4 {
+      color: var(--primary);
+      margin-bottom: var(--spacing-sm);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .answer-box p {
+      line-height: 1.7;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--spacing-md); }
+      .restaurants-grid, .form-grid { grid-template-columns: 1fr; }
+      .modal-content { width: 95%; max-height: 90vh; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>
+      <span>🍴</span>
+      <span>Dining Intelligence</span>
+    </h1>
+    <div class="header-subtitle">Semantic AI search • Find restaurants by cuisine, vibe, or keywords</div>
+  </div>
+  
+  <div class="container">
+
+    <!-- Unified Search Section -->
+    <div class="section">
+      <h2 class="section-title">
+        <span>🍴</span>
+        <span>Restaurant Discovery</span>
+      </h2>
+      
+      <form id="searchForm">
+        <div class="form-grid">
+          <div class="input-group" style="grid-column: 1 / 4;">
+            <label class="input-label" for="term">Search by Cuisine or Keyword</label>
+            <input 
+              type="text" 
+              id="term" 
+              name="term" 
+              class="input-field" 
+              placeholder="e.g., pizza, Italian, spicy ramen, vegan burgers"
+            >
+          </div>
+          
+          <div class="input-group" style="align-self: end;">
+            <button type="submit" class="btn">
+              <span>🔍</span>
+              <span>Search</span>
+            </button>
+          </div>
+          
+          <div class="input-group" style="align-self: end;">
+            <button type="button" id="recommendBtn" class="btn" style="background: #1C8B4D;">
+              <span>🎯</span>
+              <span>Recommend</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <span class="filter-label">Quick Filters:</span>
+          <label class="filter-pill">
+            <input type="checkbox" id="filter-open">
+            <span>🕑 Open Now</span>
+          </label>
+          <label class="filter-pill">
+            <input type="checkbox" id="filter-price1">
+            <span>$ Budget</span>
+          </label>
+          <label class="filter-pill">
+            <input type="checkbox" id="filter-price2">
+            <span>$ Moderate</span>
+          </label>
+          <label class="filter-pill">
+            <input type="checkbox" id="filter-price3">
+            <span>$$ Upscale</span>
+          </label>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Floating Compare Bar (shows when 2+ restaurants selected) -->
+    <div class="compare-bar" id="compareBar">
+      <span class="compare-bar-text" id="compareBarText">0 restaurants selected</span>
+      <button class="btn" id="clearSelectionBtn" style="background: transparent; color: var(--text-inverse); border: 1px solid var(--text-inverse);">
+        <span>❌</span>
+        <span>Clear</span>
+      </button>
+      <button class="btn" id="compareBarBtn">
+        <span>⚖️</span>
+        <span>Compare</span>
+      </button>
+    </div>
+    
+    <!-- Restaurant Details Modal -->
+    <div class="modal-overlay" id="detailsModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="detailsModalTitle">
+            <span>🏪</span>
+            <span>Restaurant Details</span>
+          </h3>
+          <button class="modal-close" id="closeDetailsModalBtn">✕</button>
+        </div>
+        <div class="modal-body" id="detailsModalBody">
+          <!-- Details will be dynamically loaded -->
+        </div>
+        
+        <!-- Ask Section - integrated in details modal -->
+        <div style="border-top: 2px solid var(--border); background: #F8F8F8;">
+          <div style="padding: var(--spacing-lg);">
+            <h4 style="margin: 0 0 var(--spacing-sm) 0; display: flex; align-items: center; gap: var(--spacing-sm); color: var(--text-primary);">
+              <span>💬</span>
+              <span>Ask About Reviews</span>
+            </h4>
+            <p style="color: var(--text-secondary); margin: 0 0 var(--spacing-md) 0; font-size: 0.875rem;">
+              Ask any question about this restaurant's reviews. The AI will analyze them to provide insights.
+            </p>
+            <textarea 
+              id="detailsQuestionInput" 
+              class="question-textarea" 
+              placeholder="e.g., What do people say about the service? Is it good for families? How's the ambiance?"
+              style="min-height: 80px; margin-bottom: var(--spacing-md);"
+            ></textarea>
+            <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+              <button class="btn" id="submitDetailsQuestionBtn" style="background: #1C8B4D;">
+                <span>🔍</span>
+                <span>Get Answer</span>
+              </button>
+            </div>
+            <div id="detailsAnswerContainer"></div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="closeDetailsBtn">Close</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ask Question Modal -->
+    <div class="modal-overlay" id="askModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <span>💬</span>
+            <span>Ask About Selected Restaurants</span>
+          </h3>
+          <button class="modal-close" id="closeModalBtn">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+            Ask any question about the selected restaurant(s). The AI will analyze their reviews to provide insights.
+          </p>
+          <textarea 
+            id="questionInput" 
+            class="question-textarea" 
+            placeholder="e.g., What do people say about the service? Is it good for families? How's the ambiance?"
+          ></textarea>
+          <div id="answerContainer"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+          <button class="btn" id="submitQuestionBtn">
+            <span>🔍</span>
+            <span>Get Answer</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card restaurants">
+        <div class="kpi-header">
+          <div class="kpi-label">Restaurants Found</div>
+          <div class="kpi-icon">🏪</div>
+        </div>
+        <div class="kpi-value" id="kpi-total">0</div>
+        <div class="kpi-meta" id="kpi-location-meta">In current search</div>
+      </div>
+      
+      <div class="kpi-card avg-rating">
+        <div class="kpi-header">
+          <div class="kpi-label">Average Rating</div>
+          <div class="kpi-icon">⭐</div>
+        </div>
+        <div class="kpi-value" id="kpi-rating">--</div>
+        <div class="kpi-meta">Out of 5.0 stars</div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">Price Range</div>
+          <div class="kpi-icon">💵</div>
+        </div>
+        <div class="kpi-value" id="kpi-price">--</div>
+        <div class="kpi-meta" id="kpi-price-meta">Average cost level</div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-label">Top Category</div>
+          <div class="kpi-icon">🍽️</div>
+        </div>
+        <div class="kpi-value" id="kpi-category">--</div>
+        <div class="kpi-meta" id="kpi-category-count">Most common cuisine</div>
+      </div>
+    </div>
+
+    <!-- Search Results -->
+    <div id="results">
+      <div class="empty-state">
+        <div class="empty-state-icon">🍴</div>
+        <h3 class="empty-state-title">Ready to Discover Amazing Restaurants?</h3>
+        <p style="color: var(--text-secondary);">Enter a location and start exploring</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const resultsDiv = document.getElementById('results');
+    const compareBar = document.getElementById('compareBar');
+    const compareBarText = document.getElementById('compareBarText');
+    const compareBarBtn = document.getElementById('compareBarBtn');
+    let currentResults = [];
+    let selectedRestaurants = new Set();
+
+    // Filter pill interactivity
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const checkbox = pill.querySelector('input');
+        checkbox.checked = !checkbox.checked;
+        pill.classList.toggle('active', checkbox.checked);
+      });
+    });
+    
+    // Update compare bar visibility (only show when 2+ selected)
+    function updateCompareBar() {
+      const count = selectedRestaurants.size;
+      compareBarText.textContent = `${count} restaurant${count !== 1 ? 's' : ''} selected`;
+      
+      if (count >= 2) {
+        compareBar.classList.add('visible');
+      } else {
+        compareBar.classList.remove('visible');
+      }
+    }
+    
+    // Handle restaurant selection
+    function toggleRestaurantSelection(restaurantId, checkbox) {
+      if (checkbox.checked) {
+        if (selectedRestaurants.size >= 5) {
+          checkbox.checked = false;
+          alert('You can compare a maximum of 5 restaurants');
+          return;
+        }
+        selectedRestaurants.add(restaurantId);
+      } else {
+        selectedRestaurants.delete(restaurantId);
+      }
+      updateCompareBar();
+    }
+    
+    // Clear selection
+    document.getElementById('clearSelectionBtn').addEventListener('click', () => {
+      selectedRestaurants.clear();
+      
+      // Uncheck all checkboxes and remove selected class
+      document.querySelectorAll('.selection-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      document.querySelectorAll('.restaurant-card.selected').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      updateCompareBar();
+    });
+    
+    // Compare selected restaurants
+    compareBarBtn.addEventListener('click', async () => {
+      if (selectedRestaurants.size < 2) {
+        alert('Please select at least 2 restaurants to compare');
+        return;
+      }
+      
+      // Scroll to results area
+      resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      
+      // Show comparison in results area
+      resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><h3>Comparing...</h3></div>';
+      
+      try {
+        const response = await fetch('/api/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ restaurant_ids: Array.from(selectedRestaurants) })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          resultsDiv.innerHTML = `
+            <div class="error-state">
+              <div class="error-icon">⚠️</div>
+              <h3 class="error-title">Comparison Failed</h3>
+              <p>${data.error}</p>
+            </div>
+          `;
+          return;
+        }
+        
+        renderComparison(data);
+        
+      } catch (error) {
+        resultsDiv.innerHTML = `
+          <div class="error-state">
+            <div class="error-icon">❌</div>
+            <h3 class="error-title">Connection Error</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    });
+
+    // Search Form
+    document.getElementById('searchForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const term = document.getElementById('term').value;
+      
+      resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><h3>Searching...</h3></div>';
+      
+      try {
+        const params = new URLSearchParams();
+        if (term) params.append('term', term);
+        
+        if (document.getElementById('filter-open').checked) {
+          params.append('open_now', 'true');
+        }
+        
+        const activePrices = [];
+        if (document.getElementById('filter-price1').checked) activePrices.push('1');
+        if (document.getElementById('filter-price2').checked) activePrices.push('2');
+        if (document.getElementById('filter-price3').checked) activePrices.push('3');
+        if (activePrices.length > 0) {
+          params.append('price', activePrices.join(','));
+        }
+        
+        const response = await fetch(`/api/search?${params}`);
+        const data = await response.json();
+        
+        if (data.error) {
+          resultsDiv.innerHTML = `
+            <div class="error-state">
+              <div class="error-icon">⚠️</div>
+              <h3 class="error-title">Search Failed</h3>
+              <p>${data.error}</p>
+            </div>
+          `;
+          return;
+        }
+        
+        currentResults = data.restaurants || [];
+        updateKPIs(currentResults);
+        renderRestaurants(currentResults);
+        
+      } catch (error) {
+        resultsDiv.innerHTML = `
+          <div class="error-state">
+            <div class="error-icon">❌</div>
+            <h3 class="error-title">Connection Error</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    });
+
+
+
+    // Ask Question Modal Handlers
+    const askModal = document.getElementById('askModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const submitQuestionBtn = document.getElementById('submitQuestionBtn');
+    const questionInput = document.getElementById('questionInput');
+    const answerContainer = document.getElementById('answerContainer');
+    
+    // Close modal
+    function closeAskModal() {
+      askModal.classList.remove('visible');
+    }
+    
+    closeModalBtn.addEventListener('click', closeAskModal);
+    cancelModalBtn.addEventListener('click', closeAskModal);
+    
+    // Close modal on overlay click
+    askModal.addEventListener('click', (e) => {
+      if (e.target === askModal) {
+        closeAskModal();
+      }
+    });
+    
+    // Submit question
+    submitQuestionBtn.addEventListener('click', async () => {
+      const question = questionInput.value.trim();
+      
+      if (!question) {
+        alert('Please enter a question');
+        return;
+      }
+      
+      // Show loading
+      answerContainer.innerHTML = `
+        <div class="answer-box">
+          <h4><span>⏳</span> Analyzing reviews...</h4>
+          <p>This may take a moment as we read through the restaurant reviews.</p>
+        </div>
+      `;
+      
+      submitQuestionBtn.disabled = true;
+      submitQuestionBtn.style.opacity = '0.6';
+      
+      try {
+        const response = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurant_ids: Array.from(selectedRestaurants),
+            question: question
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          answerContainer.innerHTML = `
+            <div class="error-state" style="margin-top: var(--spacing-md);">
+              <div class="error-icon">⚠️</div>
+              <h3 class="error-title">Failed to Answer</h3>
+              <p>${data.error}</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Show answer
+        answerContainer.innerHTML = `
+          <div class="answer-box">
+            <h4><span>🤖</span> AI Answer</h4>
+            <p>${data.answer}</p>
+            ${data.num_reviews ? `<p style="margin-top: var(--spacing-sm); font-size: 0.875rem; color: var(--text-tertiary);">Based on ${data.num_reviews} review(s)</p>` : ''}
+          </div>
+        `;
+        
+      } catch (error) {
+        answerContainer.innerHTML = `
+          <div class="error-state" style="margin-top: var(--spacing-md);">
+            <div class="error-icon">❌</div>
+            <h3 class="error-title">Connection Error</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+      } finally {
+        submitQuestionBtn.disabled = false;
+        submitQuestionBtn.style.opacity = '1';
+      }
+    });
+    
+    // Allow Enter key to submit (Shift+Enter for new line)
+    questionInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitQuestionBtn.click();
+      }
+    });
+
+    // Restaurant Details Modal
+    const detailsModal = document.getElementById('detailsModal');
+    const detailsModalTitle = document.getElementById('detailsModalTitle');
+    const detailsModalBody = document.getElementById('detailsModalBody');
+    const closeDetailsModalBtn = document.getElementById('closeDetailsModalBtn');
+    const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+    const askAboutRestaurantBtn = document.getElementById('askAboutRestaurantBtn');
+    let currentDetailRestaurant = null;
+    
+    function openRestaurantDetails(restaurant) {
+      currentDetailRestaurant = restaurant;
+      detailsModalTitle.innerHTML = `<span>🏪</span><span>${restaurant.name}</span>`;
+      
+      const location = restaurant.location || {};
+      const categories = (restaurant.categories || []).map(c => c.title || c);
+      
+      detailsModalBody.innerHTML = `
+        <div style="margin-bottom: var(--spacing-lg);">
+          ${restaurant.rating ? `
+            <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+              <div class="rating-badge" style="font-size: 1.25rem;">
+                <span>⭐</span>
+                <span>${safeRating(restaurant.rating).toFixed(1)}</span>
+              </div>
+              <span style="color: var(--text-secondary);">${formatNumber(restaurant.review_count || 0)} reviews</span>
+            </div>
+          ` : ''}
+          
+          ${restaurant.price ? `
+            <div style="margin-bottom: var(--spacing-sm);">
+              <span style="color: var(--text-secondary); margin-right: var(--spacing-xs);">Price:</span>
+              <span class="price-indicator" style="font-size: 1.125rem;">${restaurant.price}</span>
+            </div>
+          ` : ''}
+          
+          ${categories.length > 0 ? `
+            <div class="categories" style="margin-bottom: var(--spacing-md);">
+              ${categories.map(c => `<span class="category-tag">${c}</span>`).join('')}
+            </div>
+          ` : ''}
+          
+          ${location.address1 || location.city ? `
+            <div style="background: var(--surface); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-md);">
+              <div style="font-weight: 600; margin-bottom: var(--spacing-xs); color: var(--text-primary);">📍 Location</div>
+              ${location.address1 ? `<div>${location.address1}</div>` : ''}
+              ${location.city || location.state ? `<div>${location.city || ''}${location.city && location.state ? ', ' : ''}${location.state || ''} ${location.zip_code || ''}</div>` : ''}
+            </div>
+          ` : ''}
+          
+          ${restaurant.phone ? `
+            <div style="margin-bottom: var(--spacing-sm);">
+              <span style="color: var(--text-secondary); margin-right: var(--spacing-xs);">📞</span>
+              <a href="tel:${restaurant.phone}" style="color: var(--primary);">${restaurant.phone}</a>
+            </div>
+          ` : ''}
+          
+          ${restaurant.url ? `
+            <div style="margin-bottom: var(--spacing-sm);">
+              <a href="${restaurant.url}" target="_blank" rel="noopener" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: var(--spacing-xs);">
+                <span>🔗</span>
+                <span>View on Yelp</span>
+              </a>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      
+      detailsModal.classList.add('visible');
+    }
+    
+    function closeDetailsModal() {
+      detailsModal.classList.remove('visible');
+      currentDetailRestaurant = null;
+      // Reset ask section
+      if (detailsQuestionInput) detailsQuestionInput.value = '';
+      if (detailsAnswerContainer) detailsAnswerContainer.innerHTML = '';
+    }
+    
+    closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
+    closeDetailsBtn.addEventListener('click', closeDetailsModal);
+    
+    detailsModal.addEventListener('click', (e) => {
+      if (e.target === detailsModal) {
+        closeDetailsModal();
+      }
+    });
+    
+    // Ask about this restaurant's reviews - integrated in details modal
+    const detailsQuestionInput = document.getElementById('detailsQuestionInput');
+    const detailsAnswerContainer = document.getElementById('detailsAnswerContainer');
+    const submitDetailsQuestionBtn = document.getElementById('submitDetailsQuestionBtn');
+    
+    submitDetailsQuestionBtn.addEventListener('click', async () => {
+      if (!currentDetailRestaurant) return;
+      
+      const question = detailsQuestionInput.value.trim();
+      if (!question) {
+        alert('Please enter a question about the restaurant.');
+        return;
+      }
+      
+      // Show loading state
+      detailsAnswerContainer.innerHTML = `
+        <div class="answer-box">
+          <h4><span>⏳</span> Analyzing reviews...</h4>
+          <p>This may take a moment.</p>
+        </div>
+      `;
+      
+      submitDetailsQuestionBtn.disabled = true;
+      submitDetailsQuestionBtn.style.opacity = '0.6';
+      
+      try {
+        // Call ask API with just this restaurant
+        const response = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: question,
+            restaurant_ids: [currentDetailRestaurant.id]
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          detailsAnswerContainer.innerHTML = `
+            <div class="answer-box" style="border-left-color: var(--error);">
+              <h4 style="color: var(--error);"><span>⚠️</span> Error</h4>
+              <p>${data.error}</p>
+            </div>
+          `;
+        } else {
+          detailsAnswerContainer.innerHTML = `
+            <div class="answer-box">
+              <h4><span>🧠</span> Answer</h4>
+              <p>${data.answer || 'No answer available.'}</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        detailsAnswerContainer.innerHTML = `
+          <div class="answer-box" style="border-left-color: var(--error);">
+            <h4 style="color: var(--error);"><span>❌</span> Connection Error</h4>
+            <p>${error.message}</p>
+          </div>
+        `;
+      } finally {
+        submitDetailsQuestionBtn.disabled = false;
+        submitDetailsQuestionBtn.style.opacity = '1';
+      }
+    });
+
+    // Recommend Button - uses recommendation engine with scored results
+    document.getElementById('recommendBtn').addEventListener('click', async () => {
+      const term = document.getElementById('term').value.trim();
+      if (!term) {
+        alert('Please enter preferences (e.g., "romantic Italian dinner" or "best burgers")');
+        return;
+      }
+      
+      resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><h3>Finding personalized recommendations...</h3></div>';
+      
+      try {
+        // Extract cuisines from search term (simple keyword extraction)
+        const cuisineKeywords = ['italian', 'mexican', 'chinese', 'japanese', 'thai', 'indian', 'french', 'korean', 'vietnamese', 'mediterranean', 'greek', 'american', 'burger', 'pizza', 'sushi', 'bbq', 'seafood'];
+        const termLower = term.toLowerCase();
+        const preferredCuisines = cuisineKeywords.filter(cuisine => termLower.includes(cuisine));
+        
+        // Get price filter
+        const activePrices = [];
+        if (document.getElementById('filter-price1').checked) activePrices.push(1);
+        if (document.getElementById('filter-price2').checked) activePrices.push(2);
+        if (document.getElementById('filter-price3').checked) activePrices.push(3);
+        
+        const maxPriceLevel = activePrices.length > 0 ? Math.max(...activePrices) : 3;
+        
+        // Build preferences object
+        const preferences = {
+          preferred_cuisines: preferredCuisines.length > 0 ? preferredCuisines : [term],
+          max_price_level: maxPriceLevel,
+          min_rating: 0
+        };
+        
+        // Call recommendation endpoint
+        const response = await fetch('/api/recommend', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferences: preferences,
+            limit: 30
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          resultsDiv.innerHTML = `
+            <div class="error-state">
+              <div class="error-icon">⚠️</div>
+              <h3 class="error-title">Recommendation Failed</h3>
+              <p>${data.error}</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Extract restaurants from scored results
+        const scoredResults = data.recommendations || [];
+        currentResults = scoredResults.map(sr => sr.restaurant);
+        
+        // Show recommendations with scoring info
+        resultsDiv.innerHTML = '';
+        
+        if (scoredResults.length === 0) {
+          resultsDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🍽️</div><h3>No recommendations found</h3><p>Try adjusting your search terms or filters.</p></div>';
+          return;
+        }
+        
+        // Build recommendation HTML
+        let html = `
+          <div style="background: linear-gradient(135deg, #1C8B4D 0%, #157A42 100%); color: white; padding: var(--spacing-lg); border-radius: var(--radius-lg); margin-bottom: var(--spacing-xl);">
+            <h3 style="margin: 0 0 var(--spacing-sm) 0; display: flex; align-items: center; gap: var(--spacing-sm);">
+              <span>🎯</span>
+              <span>Personalized Recommendations</span>
+            </h3>
+            <p style="margin: 0; opacity: 0.9;">Found ${scoredResults.length} restaurants ranked by rating, popularity, and preference match</p>
+          </div>
+          <div class="restaurants-grid">
+        `;
+        
+        scoredResults.forEach((scored, index) => {
+          const restaurant = scored.restaurant;
+          const categories = (restaurant.categories || []).slice(0, 3);
+          const isSelected = selectedRestaurants.has(restaurant.id);
+          
+          // Build card HTML with recommendation badge and evidence
+          html += `
+            <div class="restaurant-card ${isSelected ? 'selected' : ''}" data-restaurant-id="${restaurant.id}" style="position: relative;">
+              <input 
+                type="checkbox" 
+                class="selection-checkbox" 
+                data-restaurant-id="${restaurant.id}"
+                ${isSelected ? 'checked' : ''}
+              >
+              <div style="position: absolute; top: 50px; right: var(--spacing-md); background: #1C8B4D; color: white; padding: 6px 12px; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.875rem; z-index: 5;">
+                #${index + 1} • ${(scored.total_score * 100).toFixed(0)}%
+              </div>
+              <div class="restaurant-image-placeholder">
+                <span style="filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));">${getCuisineEmoji(categories)}</span>
+              </div>
+              <div class="restaurant-content">
+                <h3 class="restaurant-name">${restaurant.name}</h3>
+                ${restaurant.rating ? `<div class="rating-badge"><span>⭐</span><span>${safeRating(restaurant.rating).toFixed(1)}</span></div>` : ''}
+                ${categories.length > 0 ? `
+                  <div class="categories">
+                    ${categories.map(c => `<span class="category-tag">${c.title || c}</span>`).join('')}
+                  </div>
+                ` : ''}
+                <div class="restaurant-stats">
+                  <div class="stat-item">
+                    <div class="stat-label">Price</div>
+                    <div class="stat-value price-indicator">${restaurant.price || 'N/A'}</div>
+                  </div>
+                  <div class="stat-item">
+                    <div class="stat-label">Reviews</div>
+                    <div class="stat-value">${formatNumber(restaurant.review_count || 0)}</div>
+                  </div>
+                </div>
+                ${scored.evidence && scored.evidence.length > 0 ? `
+                  <div style="margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--border);">
+                    <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Why recommended:</div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">${scored.evidence.join(' • ')}</div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+        
+        // Add event listeners to checkboxes
+        document.querySelectorAll('.selection-checkbox').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            const restaurantId = e.target.dataset.restaurantId;
+            const card = document.querySelector(`.restaurant-card[data-restaurant-id="${restaurantId}"]`);
+            
+            if (e.target.checked) {
+              card.classList.add('selected');
+            } else {
+              card.classList.remove('selected');
+            }
+            
+            toggleRestaurantSelection(restaurantId, e.target);
+          });
+        });
+        
+        // Make cards clickable to open details modal
+        document.querySelectorAll('.restaurant-card').forEach(card => {
+          card.addEventListener('click', (e) => {
+            // Don't open modal if clicking the checkbox itself
+            if (e.target.classList.contains('selection-checkbox')) return;
+            
+            const restaurantId = card.dataset.restaurantId;
+            const restaurant = currentResults.find(r => r.id === restaurantId);
+            if (restaurant) {
+              openRestaurantDetails(restaurant);
+            }
+          });
+        });
+        
+        updateKPIs(currentResults);
+        
+      } catch (error) {
+        resultsDiv.innerHTML = `
+          <div class="error-state">
+            <div class="error-icon">❌</div>
+            <h3 class="error-title">Connection Error</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    });
+
+    function updateKPIs(restaurants) {
+      document.getElementById('kpi-total').textContent = restaurants.length;
+      document.getElementById('kpi-location-meta').textContent = 'Semantic search results';
+      
+      if (restaurants.length > 0) {
+        const avgRating = restaurants.reduce((sum, r) => sum + safeRating(r.rating), 0) / restaurants.length;
+        document.getElementById('kpi-rating').textContent = avgRating.toFixed(1);
+        
+        const priceMap = {'$': 1, '$$': 2, '$$$': 3, '$$$$': 4};
+        const prices = restaurants.map(r => priceMap[r.price] || 0).filter(p => p > 0);
+        if (prices.length > 0) {
+          const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+          const priceLabel = Object.keys(priceMap).find(k => priceMap[k] === Math.round(avgPrice)) || '--';
+          document.getElementById('kpi-price').textContent = priceLabel;
+          document.getElementById('kpi-price-meta').textContent = `${prices.length} with pricing data`;
+        }
+        
+        const categoryCount = {};
+        restaurants.forEach(r => {
+          (r.categories || []).forEach(cat => {
+            const title = cat.title || cat;
+            categoryCount[title] = (categoryCount[title] || 0) + 1;
+          });
+        });
+        
+        const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+        if (topCategory) {
+          document.getElementById('kpi-category').textContent = topCategory[0];
+          document.getElementById('kpi-category-count').textContent = `${topCategory[1]} restaurants`;
+        }
+      }
+    }
+
+    function renderRestaurants(restaurants) {
+      if (restaurants.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <h3 class="empty-state-title">No Restaurants Found</h3>
+            <p style="color: var(--text-secondary);">Try adjusting your search</p>
+          </div>
+        `;
+        return;
+      }
+      
+      resultsDiv.innerHTML = `
+        <h2 style="margin-bottom: var(--spacing-lg);">Found ${restaurants.length} Restaurant${restaurants.length !== 1 ? 's' : ''}</h2>
+        <div class="restaurants-grid">
+          ${restaurants.map(r => renderRestaurantCard(r)).join('')}
+        </div>
+      `;
+      
+      // Add event listeners to checkboxes
+      document.querySelectorAll('.selection-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const restaurantId = e.target.dataset.restaurantId;
+          const card = document.querySelector(`.restaurant-card[data-restaurant-id="${restaurantId}"]`);
+          
+          if (e.target.checked) {
+            card.classList.add('selected');
+          } else {
+            card.classList.remove('selected');
+          }
+          
+          toggleRestaurantSelection(restaurantId, e.target);
+        });
+      });
+      
+      // Make cards clickable to open details modal
+      document.querySelectorAll('.restaurant-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          // Don't open modal if clicking the checkbox itself
+          if (e.target.classList.contains('selection-checkbox')) return;
+          
+          const restaurantId = card.dataset.restaurantId;
+          const restaurant = restaurants.find(r => r.id === restaurantId);
+          if (restaurant) {
+            openRestaurantDetails(restaurant);
+          }
+        });
+      });
+    }
+
+    function renderRestaurantCard(r) {
+      const categories = (r.categories || []).slice(0, 3);
+      const isSelected = selectedRestaurants.has(r.id);
+      return `
+        <div class="restaurant-card ${isSelected ? 'selected' : ''}" data-restaurant-id="${r.id}">
+          <input 
+            type="checkbox" 
+            class="selection-checkbox" 
+            data-restaurant-id="${r.id}"
+            ${isSelected ? 'checked' : ''}
+          >
+          <div class="restaurant-image-placeholder">
+            <span style="filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));">${getCuisineEmoji(categories)}</span>
+          </div>
+          <div class="restaurant-content">
+            <h3 class="restaurant-name">${r.name}</h3>
+            ${r.rating ? `<div class="rating-badge"><span>⭐</span><span>${safeRating(r.rating).toFixed(1)}</span></div>` : ''}
+            ${categories.length > 0 ? `
+              <div class="categories">
+                ${categories.map(c => `<span class="category-tag">${c.title || c}</span>`).join('')}
+              </div>
+            ` : ''}
+            <div class="restaurant-stats">
+              <div class="stat-item">
+                <div class="stat-label">Price</div>
+                <div class="stat-value price-indicator">${r.price || 'N/A'}</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">Reviews</div>
+                <div class="stat-value">${formatNumber(r.review_count || 0)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderComparison(data) {
+      if (data.partial_errors && data.partial_errors.length > 0) {
+        const errorMsg = `<p style="color: var(--error); margin-bottom: var(--spacing-md);">
+          ⚠️ ${data.partial_errors.length} restaurant(s) could not be fetched
+        </p>`;
+        resultsDiv.innerHTML = errorMsg;
+      } else {
+        resultsDiv.innerHTML = '';
+      }
+      
+      if (!data.restaurants || data.restaurants.length === 0) {
+        resultsDiv.innerHTML += '<div class="error-state"><p>No restaurants to compare</p></div>';
+        return;
+      }
+      
+      const insights = data.insights;
+      let html = `
+        <div class="comparison-summary">
+          <h3>
+            <span>📊</span>
+            <span>Comparison Analysis</span>
+          </h3>
+          <p>${insights.summary || 'Analyzing the selected restaurants...'}</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+          <div style="background: var(--surface-elevated); padding: var(--spacing-md); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 4px;">Highest Rated</div>
+            <div style="font-weight: 700; color: var(--text-primary);">${insights.highest_rated.name}</div>
+            <div style="color: var(--primary); font-size: 0.875rem; margin-top: 4px;">${insights.highest_rated.rating}⭐</div>
+          </div>
+          <div style="background: var(--surface-elevated); padding: var(--spacing-md); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 4px;">Most Popular</div>
+            <div style="font-weight: 700; color: var(--text-primary);">${insights.most_reviewed.name}</div>
+            <div style="color: var(--primary); font-size: 0.875rem; margin-top: 4px;">${formatNumber(insights.most_reviewed.review_count)} reviews</div>
+          </div>
+          <div style="background: var(--surface-elevated); padding: var(--spacing-md); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 4px;">Average Rating</div>
+            <div style="font-weight: 700; color: var(--text-primary); font-size: 1.5rem;">${insights.average_rating.toFixed(1)}</div>
+            <div style="color: var(--text-secondary); font-size: 0.875rem;">⭐ Out of 5.0</div>
+          </div>
+          <div style="background: var(--surface-elevated); padding: var(--spacing-md); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 4px;">Price Range</div>
+            <div style="font-weight: 700; color: var(--secondary); font-size: 1.5rem;">${insights.price_range}</div>
+            <div style="color: var(--text-secondary); font-size: 0.875rem;">Cost level</div>
+          </div>
+        </div>
+        
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Restaurant</th>
+              <th>Rating</th>
+              <th>Reviews</th>
+              <th>Price</th>
+              <th>Categories</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.restaurants.map(r => `
+              <tr>
+                <td><strong>${r.name}</strong></td>
+                <td>${r.rating ? safeRating(r.rating).toFixed(1) + ' ⭐' : 'N/A'}</td>
+                <td>${formatNumber(r.review_count || 0)}</td>
+                <td class="price-indicator">${r.price || 'N/A'}</td>
+                <td>${(r.categories || []).slice(0, 2).map(c => c.title || c).join(', ')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      
+      resultsDiv.innerHTML += html;
+    }
+
+    function renderRecommendations(recommendations) {
+      if (!recommendations || recommendations.length === 0) {
+        recommendResultsDiv.innerHTML = '<div class="empty-state"><p>No recommendations found</p></div>';
+        return;
+      }
+      
+      const medals = ['🥇', '🥈', '🥉'];
+      
+      recommendResultsDiv.innerHTML = `
+        <h3 style="margin-top: var(--spacing-xl); margin-bottom: var(--spacing-xl); font-size: 1.5rem; text-align: center;">
+          🎯 Your Top ${recommendations.length} Personalized Picks
+        </h3>
+        <div class="recommendations-grid">
+        ${recommendations.map((rec, idx) => {
+          const r = rec.restaurant;
+          const factors = rec.scoring_factors;
+          return `
+            <div class="recommendation-card">
+              <div class="recommendation-rank">
+                <span class="rank-badge">${medals[idx]}</span>
+                <div style="flex: 1;">
+                  <h4 style="font-size: 1.25rem; font-weight: 600; margin: 0;">${r.name}</h4>
+                  ${r.rating ? `<div class="rating-badge" style="margin-top: 4px;"><span>⭐</span><span>${safeRating(r.rating).toFixed(1)}</span></div>` : ''}
+                </div>
+              </div>
+              <div class="recommendation-header">
+                <div style="flex: 1;"></div>
+                <div class="recommendation-score">${(rec.total_score * 100).toFixed(0)}%</div>
+              </div>
+              
+              ${(r.categories || []).length > 0 ? `
+                <div class="categories">
+                  ${(r.categories || []).slice(0, 3).map(c => `<span class="category-tag">${c.title || c}</span>`).join('')}
+                </div>
+              ` : ''}
+              
+              <div class="score-factors">
+                <div class="score-factor">
+                  <div class="score-factor-label">Rating</div>
+                  <div class="score-factor-value">${(factors.rating * 100).toFixed(0)}%</div>
+                </div>
+                <div class="score-factor">
+                  <div class="score-factor-label">Popularity</div>
+                  <div class="score-factor-value">${(factors.popularity * 100).toFixed(0)}%</div>
+                </div>
+                ${factors.cuisine_match !== undefined ? `
+                  <div class="score-factor">
+                    <div class="score-factor-label">Cuisine Match</div>
+                    <div class="score-factor-value">${(factors.cuisine_match * 100).toFixed(0)}%</div>
+                  </div>
+                ` : ''}
+                ${factors.price_match !== undefined ? `
+                  <div class="score-factor">
+                    <div class="score-factor-label">Price Match</div>
+                    <div class="score-factor-value">${(factors.price_match * 100).toFixed(0)}%</div>
+                  </div>
+                ` : ''}
+              </div>
+              
+              <p style="margin-top: var(--spacing-md); font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                <strong style="color: var(--text-primary);">💡 Why this pick:</strong><br/>
+                ${rec.evidence.join(' • ')}
+              </p>
+            </div>
+          `;
+        }).join('')}
+        </div>
+      `;
+    }
+
+    // Helper to safely convert rating to number for .toFixed()
+    function safeRating(rating) {
+      const num = typeof rating === 'number' ? rating : parseFloat(rating);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function getCuisineEmoji(categories) {
+      const categoryStr = categories.map(c => (c.title || c).toLowerCase()).join(' ');
+      if (categoryStr.includes('pizza')) return '🍕';
+      if (categoryStr.includes('sushi') || categoryStr.includes('japanese')) return '🍱';
+      if (categoryStr.includes('burger')) return '🍔';
+      if (categoryStr.includes('mexican') || categoryStr.includes('taco')) return '🌮';
+      if (categoryStr.includes('italian') || categoryStr.includes('pasta')) return '🍝';
+      if (categoryStr.includes('chinese')) return '🥡';
+      if (categoryStr.includes('indian')) return '🍛';
+      if (categoryStr.includes('thai')) return '🍜';
+      if (categoryStr.includes('coffee') || categoryStr.includes('cafe')) return '☕';
+      if (categoryStr.includes('dessert') || categoryStr.includes('bakery')) return '🧁';
+      return '🍽️';
+    }
+
+    function formatNumber(num) {
+      if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'k';
+      }
+      return num.toString();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+command:
+  - "python"
+  - "app.py"
+
+env:
+  - name: FLASK_RUN_HOST
+    value: "0.0.0.0"
+  - name: FLASK_RUN_PORT
+    value: "8000"
+  # Secrets are fetched programmatically via WorkspaceClient
+  # from the 'restaurant-app' scope with keys:
+  #   - yelp-api-key
+  #   - lakebase-url
+
+resources:
+  - name: restaurant-app-compute
+    description: Compute for restaurant planner app
+    attributes:
+      compute:
+        instance_type: small

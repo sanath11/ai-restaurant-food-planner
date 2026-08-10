@@ -1,0 +1,36 @@
+resources:
+  jobs:
+    ingest_yelp_data:
+      name: ingest yelp data
+      schedule:
+        quartz_cron_expression: 39 35 18 * * ?
+        timezone_id: America/New_York
+        pause_status: UNPAUSED
+      tasks:
+        - task_key: ingest_restaurants_embeddings
+          notebook_task:
+            notebook_path: /Workspace/Users/sanath.ms11@gmail.com/ai-restaurant-food-planner/notebooks/ingest_restaurants_embeddings
+            base_parameters:
+              locations: New York, NY
+              yelp_secret_scope: restaurant-app
+              yelp_secret_key: yelp-api-key
+              lakebase_secret_scope: restaurant-app
+              lakebase_secret_key: lakebase-connection
+              embedding_model: sentence-transformers/all-MiniLM-L6-v2
+            source: WORKSPACE
+        - task_key: ingest_review_embeddings
+          depends_on:
+            - task_key: ingest_restaurants_embeddings
+          notebook_task:
+            notebook_path: /Workspace/Users/sanath.ms11@gmail.com/ai-restaurant-food-planner/notebooks/ingest_reviews_embeddings
+            base_parameters:
+              yelp_secret_scope: restaurant-app
+              yelp_secret_key: yelp-api-key
+              lakebase_secret_scope: restaurant-app
+              lakebase_secret_key: lakebase-url
+              embedding_model: sentence-transformers/all-MiniLM-L6-v2
+              batch_size: "50"
+            source: WORKSPACE
+      queue:
+        enabled: true
+      performance_target: PERFORMANCE_OPTIMIZED
