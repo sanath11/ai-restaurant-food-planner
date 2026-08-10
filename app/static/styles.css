@@ -1,0 +1,1443 @@
+    :root {
+      /* Zomato-Inspired Palette */
+      --primary: #E23744;
+      --primary-dark: #CB202D;
+      --primary-light: #FF5864;
+      --secondary: #1C1C1C;
+      --accent: #FFD700;
+      --success: #28A745;
+      --error: #DC3545;
+      --info: #17A2B8;
+      
+      /* Surfaces */
+      --surface: #F8F8F8;
+      --surface-elevated: #FFFFFF;
+      --border: #E8E8E8;
+      
+      /* Text */
+      --text-primary: #1C1C1C;
+      --text-secondary: #696969;
+      --text-tertiary: #9C9C9C;
+      --text-inverse: #FFFFFF;
+      
+      /* Spacing */
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+      --spacing-2xl: 48px;
+      
+      /* Radius */
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      
+      /* Shadows */
+      --shadow-sm: 0 2px 4px rgba(28, 28, 28, 0.08);
+      --shadow-md: 0 4px 12px rgba(28, 28, 28, 0.08);
+      --shadow-lg: 0 8px 24px rgba(28, 28, 28, 0.12);
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: var(--spacing-sm);
+      background: var(--surface-elevated);
+      padding: var(--spacing-md) var(--spacing-xl);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--spacing-xl);
+      overflow-x: auto;
+    }
+    
+    .nav-tab {
+      padding: 12px 24px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      white-space: nowrap;
+    }
+    
+    .nav-tab:hover {
+      background: var(--surface);
+      color: var(--text-primary);
+    }
+    
+    .nav-tab.active {
+      background: var(--primary);
+      color: var(--text-inverse);
+      box-shadow: 0 2px 8px rgba(226, 55, 68, 0.25);
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Favorite Button */
+    .favorite-btn {
+      position: absolute;
+      top: var(--spacing-md);
+      right: var(--spacing-md);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text-tertiary);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .favorite-btn:hover {
+      transform: scale(1.1);
+      background: rgba(255, 255, 255, 1);
+    }
+    
+    .favorite-btn.favorited {
+      color: var(--primary);
+    }
+
+    /* Meal Plan Styles */
+    .meal-plan-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+    
+    .meal-plan-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+    
+    .meal-plan-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .meal-plan-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .meal-plan-meta {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+    
+    .meal-plan-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+    }
+    
+    .icon-btn:hover {
+      background: var(--surface);
+      color: var(--text-primary);
+    }
+    
+    .meal-plan-restaurants {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+    }
+    
+    .meal-plan-restaurant {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm);
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+    }
+
+    /* Preferences Form */
+    .preferences-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--spacing-lg);
+    }
+    
+    .preference-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .preference-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-sm);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+    
+    .preference-value {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      padding: var(--spacing-sm);
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 1600px;
+      margin: 0 auto;
+      background: var(--surface);
+      color: var(--text-primary);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    
+    .container {
+      padding: var(--spacing-lg) var(--spacing-xl);
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: var(--spacing-2xl) var(--spacing-xl);
+      margin-bottom: var(--spacing-2xl);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(226, 55, 68, 0.15);
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-inverse);
+      margin: 0 0 var(--spacing-sm) 0;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+    
+    .header-subtitle {
+      font-size: 1.125rem;
+      color: rgba(255,255,255,0.9);
+      max-width: 600px;
+    }
+
+    /* Section Styling */
+    .section {
+      background: var(--surface-elevated);
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--spacing-xl);
+      border: 1px solid var(--border);
+    }
+    
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    /* Restaurant Cards */
+    .restaurants-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--spacing-lg);
+      margin-top: var(--spacing-lg);
+    }
+    
+    .restaurant-card {
+      background: var(--surface-elevated);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+    }
+    
+    .restaurant-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .restaurant-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .restaurant-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    
+    .restaurant-rating {
+      font-weight: 600;
+      color: var(--accent);
+      font-size: 0.875rem;
+    }
+    
+    .restaurant-cuisine {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin: 0 0 var(--spacing-sm) 0;
+    }
+    
+    .restaurant-location {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin: 0 0 var(--spacing-sm) 0;
+    }
+    
+    .restaurant-price {
+      color: var(--success);
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    /* Form Controls */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .input-field {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      color: var(--text-primary);
+      background: var(--surface-elevated);
+      transition: all 0.2s ease;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: var(--surface-elevated);
+      box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      background: var(--primary);
+      color: var(--text-inverse);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      box-shadow: none;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(226, 55, 68, 0.25);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--text-inverse);
+    }
+    
+    .btn-secondary:hover {
+      background: #0D0D0D;
+      box-shadow: 0 4px 12px rgba(28, 28, 28, 0.25);
+    }
+
+    /* Filter Pills */
+    .filter-section {
+      display: flex;
+      gap: var(--spacing-sm);
+      flex-wrap: wrap;
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--border);
+      margin-top: var(--spacing-md);
+    }
+    
+    .filter-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+    }
+    
+    .filter-pill {
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      border: 1.5px solid var(--border);
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    
+    .filter-pill:hover {
+      border-color: var(--primary);
+      background: rgba(226, 55, 68, 0.05);
+    }
+    
+    .filter-pill.active {
+      background: var(--primary);
+      color: var(--text-inverse);
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(226, 55, 68, 0.25);
+    }
+    
+    .filter-pill input { display: none; }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
+    }
+    
+    .kpi-card {
+      background: var(--surface-elevated);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--accent-color, var(--primary));
+    }
+    
+    .kpi-card.restaurants { --accent-color: #E23744; }
+    .kpi-card.avg-rating { --accent-color: #1C8B4D; }
+    
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .kpi-label {
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+    
+    .kpi-icon {
+      font-size: 1.5rem;
+      opacity: 0.3;
+    }
+    
+    .kpi-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .kpi-meta {
+      font-size: 0.8125rem;
+      color: var(--text-tertiary);
+    }
+
+    /* Restaurant Cards */
+    .restaurants-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: var(--spacing-lg);
+    }
+    
+    .restaurant-card {
+      background: var(--surface-elevated);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .restaurant-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .restaurant-image-placeholder {
+      height: 180px;
+      background: linear-gradient(135deg, #FFE5E7 0%, #FFD4D8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      position: relative;
+    }
+    
+    .restaurant-content {
+      padding: var(--spacing-lg);
+    }
+    
+    .restaurant-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-sm);
+      line-height: 1.3;
+    }
+    
+    .rating-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #1C8B4D;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      color: var(--text-inverse);
+      font-size: 0.875rem;
+    }
+    
+    .categories {
+      display: flex;
+      gap: var(--spacing-xs);
+      flex-wrap: wrap;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .category-tag {
+      padding: 5px 12px;
+      background: #F5F5F5;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .restaurant-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-md);
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--border);
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-label {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+    
+    .stat-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .price-indicator {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+
+
+    /* Selection */
+    .selection-checkbox {
+      position: absolute;
+      top: var(--spacing-md);
+      left: var(--spacing-md);
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      z-index: 10;
+      accent-color: var(--primary);
+    }
+    
+    .restaurant-card.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.1);
+    }
+    
+    .compare-bar {
+      position: fixed;
+      bottom: var(--spacing-lg);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--secondary);
+      color: var(--text-inverse);
+      padding: var(--spacing-md) var(--spacing-xl);
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 24px rgba(28, 28, 28, 0.3);
+      display: none;
+      align-items: center;
+      gap: var(--spacing-md);
+      z-index: 1000;
+      animation: slideUp 0.3s ease;
+    }
+    
+    .compare-bar.visible {
+      display: flex;
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateX(-50%) translateY(100px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .compare-bar-text {
+      font-weight: 600;
+    }
+    
+    .compare-bar .btn {
+      background: var(--primary);
+      color: var(--text-inverse);
+      padding: 10px 24px;
+      font-weight: 700;
+    }
+    
+    .compare-bar .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    /* Empty/Error States */
+    .empty-state, .error-state {
+      text-align: center;
+      padding: var(--spacing-2xl);
+    }
+    
+    .empty-state-icon, .error-icon {
+      font-size: 3rem;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .empty-state-title, .error-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .error-state {
+      background: rgba(239, 83, 80, 0.05);
+      border: 2px solid rgba(239, 83, 80, 0.2);
+      border-radius: var(--radius-lg);
+    }
+    
+    .error-title {
+      color: var(--error);
+    }
+
+    /* Comparison Summary */
+    .comparison-summary {
+      background: linear-gradient(135deg, #FFF5F5 0%, #FFF9F9 100%);
+      border-left: 4px solid var(--primary);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-xl);
+    }
+    
+    .comparison-summary h3 {
+      color: var(--primary);
+      margin-bottom: var(--spacing-md);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .comparison-summary p {
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    /* Comparison Table */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: var(--spacing-lg);
+      background: var(--surface-elevated);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    
+    .comparison-table th {
+      background: var(--secondary);
+      color: var(--text-inverse);
+      padding: var(--spacing-md);
+      text-align: left;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.8125rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .comparison-table td {
+      padding: var(--spacing-md);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .comparison-table tr:hover {
+      background: var(--surface);
+    }
+    
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Recommendations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: var(--spacing-lg);
+      margin-top: var(--spacing-lg);
+    }
+    
+    .recommendation-card {
+      background: linear-gradient(135deg, var(--surface-elevated) 0%, var(--surface) 100% Cards */
+    .recommendations-grid {
+      display: grid;
+     transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .recommendation-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+    }
+    
+    .recommendation-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary);
+    }
+    
+    .recommendation-card:first-child {
+      border-color: #FFD700;
+      box-shadow: 0 8px 16px rgba(255, 215, 0, 0.2);
+    }
+    
+    .recommendation-card:first-child:hover {
+      box-shadow: 0 12px 24px rgba(255, 215, 0, 0.3 grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: var(--spacing-xl);
+      margin-top: var(--spacing-lg);
+    }
+    
+    .recommendation: linear-gradient(13) 0%, var(--surface) 100%);
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-dmd);
+      border: 2px solid var(--border);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .recommendation-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+    }
+    
+    .recommendation-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary);
+    }
+    
+    .recommendation-card:first-child {
+      border-color: #FFD700;
+      box-shadow: 0 8px 16px rgba(255, 215, 0, 0.2);
+    }
+    
+    .recommendation-card:first-child:hover {
+      box-shadow: 0 12px 24px rgba(255, 215, 0, 0.3);
+    }
+    
+    .recommendation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .recommendation-rank {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .rank-badge {
+      font-size: 83rem;
+      line-height: 1;
+    }
+    
+    .recommendation-rank {
+      display: flex;
+      align-items: center;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .rank-badge {
+      font-size: 2rem;
+      line-height: 1;
+    }
+    
+    .recommendation-score {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+    
+    .score-factors {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-lg);
+      padding-top: var(--spacing-lg);
+      border-top: 2px solid var(--border);
+    }
+    
+    .score-factor {
+      background: var(--surface);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    
+    .score-factor-label {
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .score-factor-value {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.2s ease;
+    }
+    
+    .modal-overlay.visible {
+      display: flex;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal-content {
+      background: var(--surface-elevated);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .modal-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .modal-close:hover {
+      color: var(--text-primary);
+      transform: scale(1.1);
+    }
+    
+    .modal-body {
+      padding: var(--spacing-lg);
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .modal-footer {
+      padding: var(--spacing-lg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--spacing-md);
+    }
+    
+    .question-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--surface-elevated);
+      resize: vertical;
+      transition: all 0.2s ease;
+    }
+    
+    .question-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1);
+    }
+    
+    .answer-box {
+      background: linear-gradient(135deg, #FFF5F5 0%, #FFF9F9 100%);
+      border-left: 4px solid var(--primary);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin-top: var(--spacing-md);
+    }
+    
+    .answer-box h4 {
+      color: var(--primary);
+      margin-bottom: var(--spacing-sm);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .answer-box p {
+      line-height: 1.7;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--spacing-md); }
+      .restaurants-grid, .form-grid { grid-template-columns: 1fr; }
+      .modal-content { width: 95%; max-height: 90vh; }
+    }
+
+    /* ===== NOTES FEATURE STYLES ===== */
+
+    /* Notes button on restaurant cards */
+    .notes-button {
+      position: absolute;
+      bottom: var(--spacing-md);
+      right: var(--spacing-md);
+      background: var(--accent);
+      color: var(--secondary);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      z-index: 10;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .notes-button:hover {
+      background: #FFC700;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .notes-button .notes-count {
+      background: var(--secondary);
+      color: white;
+      border-radius: var(--radius-full);
+      padding: 2px 6px;
+      font-size: 0.75rem;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    /* Notes modal */
+    .notes-modal {
+      display: none;
+      position: fixed;
+      z-index: 1001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+    }
+
+    .notes-modal-content {
+      background-color: var(--surface-elevated);
+      margin: 3% auto;
+      padding: 0;
+      width: 90%;
+      max-width: 900px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notes-modal-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .notes-modal-header h2 {
+      margin: 0;
+      font-size: 1.75rem;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+
+    .notes-modal-body {
+      padding: var(--spacing-xl);
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .note-form {
+      background: var(--surface);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-lg);
+      border: 2px dashed var(--border);
+    }
+
+    .note-form.editing {
+      border-color: var(--primary);
+      border-style: solid;
+      background: #FFF5F5;
+    }
+
+    .note-form-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-md);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .note-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--surface-elevated);
+      resize: vertical;
+      margin-bottom: var(--spacing-md);
+      transition: all 0.2s ease;
+    }
+
+    .note-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1);
+    }
+
+    .note-form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .note-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+    }
+
+    .note-form-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .note-tags-input,
+    .note-rating-input,
+    .note-date-input {
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 0.9375rem;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--surface-elevated);
+      transition: all 0.2s ease;
+    }
+
+    .note-tags-input:focus,
+    .note-rating-input:focus,
+    .note-date-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1);
+    }
+
+    .note-form-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+      justify-content: flex-end;
+    }
+
+    .note-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .note-btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .note-btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .note-btn-secondary {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .note-btn-secondary:hover {
+      background: #DCDCDC;
+    }
+
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .notes-list-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .note-item {
+      background: var(--surface-elevated);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      transition: all 0.2s ease;
+    }
+
+    .note-item:hover {
+      border-color: var(--primary-light);
+      box-shadow: var(--shadow-md);
+    }
+
+    .note-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .note-item-meta {
+      display: flex;
+      gap: var(--spacing-md);
+      align-items: center;
+    }
+
+    .note-item-rating {
+      background: var(--accent);
+      color: var(--secondary);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .note-item-date {
+      color: var(--text-tertiary);
+      font-size: 0.875rem;
+    }
+
+    .note-item-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+
+    .note-item-action-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .note-item-action-btn:hover {
+      background: var(--surface);
+      color: var(--text-primary);
+    }
+
+    .note-item-action-btn.delete:hover {
+      background: var(--error);
+      color: white;
+    }
+
+    .note-item-text {
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin-bottom: var(--spacing-sm);
+      white-space: pre-wrap;
+    }
+
+    .note-item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-xs);
+    }
+
+    .note-tag {
+      background: var(--primary-light);
+      color: white;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .notes-empty {
+      text-align: center;
+      padding: var(--spacing-2xl);
+      color: var(--text-tertiary);
+    }
+
+    .notes-empty-icon {
+      font-size: 3rem;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .notes-empty-text {
+      font-size: 1.125rem;
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .notes-empty-hint {
+      font-size: 0.9375rem;
+    }
+
+    .notes-loading {
+      text-align: center;
+      padding: var(--spacing-2xl);
+      color: var(--text-secondary);
+    }
+
+    .notes-error {
+      background: #FFEBEE;
+      color: var(--error);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-md);
+      border-left: 4px solid var(--error);
+    }
