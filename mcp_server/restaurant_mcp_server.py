@@ -29,10 +29,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ===== DATABRICKS SCHEMA COMPATIBILITY PATCH =====
-# Must happen BEFORE mcp instance is created
+# WHY: Databricks Agent Bricks requires "additionalProperties": false on ALL
+# JSON schema objects with "properties" fields. FastMCP generates schemas without this,
+# causing tool registration to fail. This patch intercepts schema generation and adds
+# the required field.
+#
+# MUST run BEFORE creating the mcp instance so the patch is active during registration.
+
 def fix_databricks_schemas(obj):
-    """Recursively set additionalProperties: false in all schema objects.
-    Databricks requires this for all tool schemas."""
+    """Recursively set additionalProperties: false in all schema objects."""
     if isinstance(obj, dict):
         if 'properties' in obj:
             obj['additionalProperties'] = False
@@ -42,14 +47,13 @@ def fix_databricks_schemas(obj):
         for item in obj:
             fix_databricks_schemas(item)
 
-# Monkey-patch FastMCP's tool schema generation
+# Monkey-patch FastMCP._get_tools to inject the fix
 from fastmcp.server.server import FastMCP as FastMCPClass
 original_get_tools = FastMCPClass._get_tools
 
 def patched_get_tools(self):
     """Intercept tool schema generation and fix for Databricks."""
     tools = original_get_tools(self)
-    # Fix each tool's inputSchema
     for tool in tools:
         if hasattr(tool, 'inputSchema') and tool.inputSchema:
             fix_databricks_schemas(tool.inputSchema)

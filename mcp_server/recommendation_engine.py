@@ -72,8 +72,8 @@ class RecommendationEngine:
             Normalized score (0-1)
         """
         if rating is None:
-            return NEUTRAL_SCORE
-        return min(rating / MAX_YELP_RATING, 1.0)
+            return 0.5  # Neutral score for missing data
+        return min(rating / 5.0, 1.0)
     
     def score_popularity(self, review_count: int) -> float:
         """
@@ -89,8 +89,7 @@ class RecommendationEngine:
             return 0.0
         
         # Log-scale: 1 review = 0.0, 1000+ reviews = 1.0
-        # log10(1000) = 3.0
-        score = math.log10(review_count) / 3.0
+        score = math.log10(review_count) / POPULARITY_LOG_THRESHOLD
         return min(score, 1.0)
     
     def score_preference_match(

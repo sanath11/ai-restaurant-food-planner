@@ -225,21 +225,6 @@ def api_details(business_id):
         logger.error(f"Details error: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/weather")
-@require_auth
-def api_weather():
-    """Get weather for a location (stub endpoint)."""
-    # Weather integration not yet implemented
-    # Return stub data to prevent frontend errors
-    return jsonify({
-        "success": True,
-        "weather": {
-            "condition": "Available",
-            "temperature": "--",
-            "description": "Weather data coming soon"
-        }
-    })
-
 @app.route("/api/compare", methods=["POST"])
 @require_auth
 def api_compare():
