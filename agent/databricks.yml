@@ -29,6 +29,19 @@ resources:
           experiment:
             experiment_id: ""
             permission: 'CAN_MANAGE'
+        
+        # Serving endpoint for LLM inference
+        - name: 'llama_endpoint'
+          serving_endpoint:
+            serving_endpoint_name: 'databricks-meta-llama-3-3-70b-instruct'
+            permission: 'CAN_QUERY'
+        
+        # Custom app - meal planner MCP server
+        # Replace 'ai-restaurant-food-planner' with actual deployed app name
+        - name: 'meal_planner_app'
+          app:
+            app_name: 'ai-restaurant-food-planner'
+            permission: 'CAN_USE'
 
 targets:
   dev:

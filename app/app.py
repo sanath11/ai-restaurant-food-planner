@@ -6,7 +6,10 @@ from functools import wraps
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
-from lakebase_client import LakebaseClient
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from shared.lakebase_client import LakebaseClient
 import secret_utils
 
 logging.basicConfig(level=logging.INFO)

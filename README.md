@@ -161,455 +161,144 @@ ai-restaurant-food-planner/
 
 ## 📡 API Endpoints Reference
 
-The Flask backend exposes **6 REST API endpoints** for restaurant operations:
+Flask backend with 17 REST endpoints.
 
-### 1. `GET /api/search`
+### Search & Discovery
 
-**Semantic search** with filters - uses Lakebase Postgres with pgvector cosine similarity (`<=>` operator) on 384-dimensional embeddings.
+**`GET /api/search`** - Semantic search with pgvector cosine similarity
 
-```json
-{
-  "location": "San Francisco, CA",
-  "cuisine": "pizza",
-  "keyword": "italian",
-  "price_level": "2",
-  "open_now": true,
-  "limit": 20
-}
-```
+Query parameters: `location`, `cuisine`, `keyword`, `price_level`, `open_now`, `limit`
 
-**Returns**:
-```json
-{
-  "restaurants": [
-    {
-      "id": "restaurant-id",
-      "name": "Restaurant Name",
-      "rating": 4.5,
-      "review_count": 230,
-      "price": "$",
-      "categories": ["Italian", "Pizza"],
-      "location": {"address": "123 Main St", "city": "San Francisco"},
-      "phone": "+14155551234",
-      "image_url": "https://..."
-    }
-  ],
-  "kpis": {
-    "total_count": 15,
-    "avg_rating": 4.3,
-    "price_range": "$-$$",
-    "top_category": "Italian"
-  }
-}
+Returns restaurants with ratings, reviews, categories, plus KPIs (count, avg rating, price range, top category).
 
----
+**`GET /api/details/<restaurant_id>`** - Single restaurant lookup
 
-### 2. `GET /api/details/<restaurant_id>`
+Returns full details: hours, photos, transactions.
 
-**Detailed information** for a specific restaurant including hours, photos, and attributes.
+**`POST /api/compare`** - Side-by-side comparison of 2-5 restaurants
 
-**URL Parameters**:
-* `restaurant_id`: Yelp business ID (e.g., `okaeri-japanese-bistro-san-francisco-3`)
+Body: `{"restaurant_ids": [...]}`
 
-**Returns**:
-```json
-{
-  "id": "restaurant-id",
-  "name": "Restaurant Name",
-  "rating": 4.5,
-  "review_count": 230,
-  "price": "$",
-  "categories": ["Italian", "Pizza"],
-  "location": {...},
-  "phone": "+14155551234",
-  "hours": [{"day": 0, "start": "1100", "end": "2200"}],
-  "photos": ["https://..."],
-  "transactions": ["delivery", "pickup"]
-}
+Returns KPI cards (highest rated, most popular) and AI-generated insights (rating patterns, price diversity, cuisine variety).
 
----
+**`POST /api/recommend`** - Multi-factor scored recommendations
 
-### 3. `POST /api/compare`
+Body: `{"location", "cuisines", "max_price", "min_rating", "limit"}`
 
-**Side-by-side comparison** of 2-5 restaurants with AI-generated insights.
+Returns top 3 with transparent scoring:
+* Rating 35%, Popularity 25%, Cuisine match 30%, Price match 10%
+* Total score 0-100%, factor breakdown, evidence per restaurant
 
-```json
-{
-  "restaurant_ids": [
-    "okaeri-japanese-bistro-san-francisco-3",
-    "toyama-sushi-san-francisco"
-  ]
-}
-```
+**`POST /api/ask`** - Review-based Q&A via Llama 3.1 70B
 
-**Returns**:
-```json
-{
-  "restaurants": [{...}, {...}],
-  "kpis": {
-    "highest_rated": {"name": "...", "rating": 4.5},
-    "most_popular": {"name": "...", "reviews": 450},
-    "average_rating": 4.3,
-    "price_range": "$-$$"
-  },
-  "insights": {
-    "summary": "AI-generated analysis highlighting rating patterns, price diversity, and cuisine variety",
-    "rating_analysis": "...",
-    "price_diversity": "...",
-    "cuisine_variety": "..."
-  }
-}
+Body: `{"restaurant_ids": [...], "question": "..."}`
 
----
+Retrieves reviews from `review_embeddings`, constructs context (max 5 reviews/restaurant), returns natural language answer.
 
-### 4. `POST /api/recommend`
+### Favorites Management
 
-**AI-powered recommendations** using multi-factor transparent scoring. Returns top 3 personalized picks.
+**`GET /api/favorites/get`** - List saved restaurants
 
-```json
-{
-  "location": "San Francisco, CA",
-  "cuisines": ["Italian", "French"],
-  "max_price": 3,
-  "min_rating": 4.0,
-  "limit": 3
-}
-```
+**`POST /api/favorites/save`** - Add to favorites
 
-**Scoring factors**:
-* **Rating** (35%) - Yelp star rating quality
-* **Popularity** (25%) - Review count as social proof
-* **Cuisine Match** (30%) - Alignment with preferences
-* **Price Match** (10%) - Budget compatibility
+Body: `{"restaurant_id", "restaurant_name"}`
 
-**Returns**:
-```json
-{
-  "recommendations": [
-    {
-      "restaurant": {...},
-      "score": 85.5,
-      "scoring_factors": {
-        "rating_score": 90.0,
-        "popularity_score": 82.0,
-        "cuisine_match_score": 100.0,
-        "price_match_score": 70.0
-      },
-      "evidence": [
-        "High rating: 4.5/5 stars based on 230 reviews",
-        "Popular: 230 reviews",
-        "Cuisine match: Italian",
-        "Price level: $ (within budget)"
-      ]
-    }
-  ]
-}
-```
+**`POST /api/favorites/remove`** - Remove from favorites
 
----
+Body: `{"restaurant_id"}`
 
-### 5. `POST /api/ask`
+### Meal Planning
 
-**Review-based question answering** powered by Databricks Foundation Models.
+**`GET /api/meal-plans/get`** - List meal plans
 
-```json
-{
-  "restaurant_ids": ["restaurant-id-1", "restaurant-id-2"],
-  "question": "What do people say about the service?"
-}
-```
+**`POST /api/meal-plans/create`** - Create plan with restaurant array
 
-**Returns**:
-```json
-{
-  "success": true,
-  "answer": "Based on reviews, customers consistently praise the attentive and friendly service...",
-  "num_reviews": 25
-}
-```
+Body: `{"plan_name", "description", "restaurant_ids": [...], "date"}`
 
-**How it works**:
-1. Retrieves reviews for selected restaurants from `review_embeddings` table in Lakebase
-2. Constructs context from review text with up to 5 reviews per restaurant
-3. Uses Databricks Foundation Model (Meta Llama 3.1 70B) to answer questions
-4. Returns natural language answer with source attribution
+**`POST /api/meal-plans/delete`** - Delete plan
 
----
+Body: `{"plan_id"}`
 
-### 6. `GET /api/favorites/get`
+### User Preferences
 
-**User favorites management** - retrieve saved favorite restaurants.
+**`GET /api/preferences/get`** - Retrieve dining preferences
 
-**Returns**:
-```json
-{
-  "success": true,
-  "total": 5,
-  "favorites": [
-    {
-      "restaurant_id": "restaurant-id",
-      "restaurant_name": "Restaurant Name",
-      "saved_at": "2024-03-15T10:30:00Z"
-    }
-  ]
-}
-```
+Returns: `preferred_cuisines`, `dietary_restrictions`, `budget_range`, `preferred_ambiance`
 
-### 7. `POST /api/favorites/save`
+**`POST /api/preferences/save`** - Save or update preferences
 
-**Add restaurant to favorites**.
+### Personal Notes
 
-```json
-{
-  "restaurant_id": "restaurant-id",
-  "restaurant_name": "Restaurant Name"
-}
-```
+**`GET /api/notes/get`** - List notes, optional filter by `restaurant_id`
 
-### 8. `POST /api/favorites/remove`
+**`POST /api/notes/create`** - Create note
 
-**Remove restaurant from favorites**.
+Body: `{"restaurant_id", "note_text", "tags": [...], "personal_rating", "visit_date"}`
 
-```json
-{
-  "restaurant_id": "restaurant-id"
-}
-```
+Tags stored as Postgres ARRAY. Personal rating 0-5, independent of Yelp.
 
-### 9. `GET /api/meal-plans/get`
+**`POST /api/notes/update/<note_id>`** - Update note
 
-**Retrieve user's meal plans**.
-
-**Returns**:
-```json
-{
-  "success": true,
-  "meal_plans": [
-    {
-      "id": 1,
-      "plan_name": "Weekend Brunch Tour",
-      "description": "Best brunch spots",
-      "restaurant_ids": ["id1", "id2", "id3"],
-      "date": "2024-03-23",
-      "created_at": "2024-03-15T10:00:00Z",
-      "updated_at": "2024-03-15T10:00:00Z"
-    }
-  ]
-}
-```
-
-### 10. `POST /api/meal-plans/create`
-
-**Create a new meal plan**.
-
-```json
-{
-  "plan_name": "Weekend Food Tour",
-  "description": "Italian restaurants",
-  "restaurant_ids": ["id1", "id2"],
-  "date": "2024-03-30"
-}
-```
-
-### 11. `POST /api/meal-plans/delete`
-
-**Delete a meal plan**.
-
-```json
-{
-  "plan_id": 1
-}
-```
-
-### 12. `GET /api/preferences/get`
-
-**Retrieve user dining preferences**.
-
-**Returns**:
-```json
-{
-  "success": true,
-  "preferences": {
-    "preferred_cuisines": "Italian, Japanese",
-    "dietary_restrictions": "Vegetarian",
-    "budget_range": "$",
-    "preferred_ambiance": "Casual, Romantic"
-  }
-}
-```
-
-### 13. `POST /api/preferences/save`
-
-**Save or update user preferences**.
-
-```json
-{
-  "preferred_cuisines": "Italian, French",
-  "dietary_restrictions": "Vegetarian",
-  "budget_range": "$",
-  "preferred_ambiance": "Casual"
-}
-```
-
-### 14. `GET /api/notes/get`
-
-**Retrieve user's restaurant notes**.
-
-**Query Parameters**:
-* `restaurant_id` (optional): Filter by specific restaurant
-
-**Returns**:
-```json
-{
-  "success": true,
-  "notes": [
-    {
-      "note_id": 1,
-      "note_text": "Great ambiance!",
-      "tags": ["favorite", "date-night"],
-      "personal_rating": 5.0,
-      "visit_date": "2024-03-10",
-      "restaurant_name": "Bella Italia",
-      "created_at": "2024-03-15T10:00:00Z",
-      "updated_at": "2024-03-15T10:00:00Z"
-    }
-  ]
-}
-```
-
-### 15. `POST /api/notes/create`
-
-**Create a restaurant note**.
-
-```json
-{
-  "restaurant_id": "restaurant-id",
-  "note_text": "Amazing food!",
-  "tags": ["favorite"],
-  "personal_rating": 5.0,
-  "visit_date": "2024-03-10"
-}
-```
-
-### 16. `POST /api/notes/update/<note_id>`
-
-**Update an existing note**.
-
-```json
-{
-  "note_text": "Still amazing!",
-  "tags": ["favorite", "must-visit"],
-  "personal_rating": 5.0
-}
-```
-
-### 17. `POST /api/notes/delete/<note_id>`
-
-**Delete a note** (no body required).
+**`POST /api/notes/delete/<note_id>`** - Delete note
 
 ---
 
 ## 🧑‍💻 MCP Tools Reference
 
-The MCP server (`mcp_server/restaurant_mcp_server.py`) exposes **15 tools** for AI agents:
+MCP server (`mcp_server/restaurant_mcp_server.py`) with 17 tools for AI agents.
 
-### Restaurant Discovery Tools
+### Discovery
 
-1. **`search_restaurants`** - Semantic search with pgvector cosine similarity
-   * Parameters: location, cuisine, keyword, price_level, open_now, limit
-   * Returns: List of restaurants with similarity scores
+* `search_restaurants` - Semantic search (pgvector cosine similarity)
+* `get_restaurant_details` - Single restaurant lookup
+* `recommend_restaurant` - Multi-factor scoring (rating 35%, popularity 25%, cuisine 30%, price 10%)
 
-2. **`get_restaurant_details`** - Get full details for a single restaurant
-   * Parameters: restaurant_id
-   * Returns: Complete restaurant information including hours and photos
+### Notes
 
-3. **`recommend_restaurant`** - AI-powered recommendations with transparent scoring
-   * Parameters: location, cuisines, max_price, min_rating, limit
-   * Returns: Top N scored restaurants with factor breakdown and evidence
+* `save_restaurant_note` - Create note (text, tags array, personal rating 0-5, visit date)
+* `get_restaurant_notes` - List notes, optional filter by restaurant_id
+* `update_restaurant_note` - Update note
+* `delete_restaurant_note` - Delete note
 
-### Notes Management Tools
+### Review Q&A
 
-4. **`save_restaurant_note`** - Create a new note for a restaurant
-   * Parameters: restaurant_id, note_text, tags (optional), personal_rating (optional), visit_date (optional)
-   * Returns: Created note with note_id
+* `ask_about_reviews` - Answer questions using Foundation Models (Llama 3.1 70B)
 
-5. **`get_restaurant_notes`** - Retrieve user's notes
-   * Parameters: restaurant_id (optional), limit
-   * Returns: List of notes, optionally filtered by restaurant
+### Favorites
 
-6. **`update_restaurant_note`** - Update an existing note
-   * Parameters: note_id, note_text (optional), tags (optional), personal_rating (optional), visit_date (optional)
-   * Returns: Updated note
+* `save_favorite` - Add restaurant to favorites
+* `get_favorites` - List favorites
+* `delete_favorite` - Remove from favorites
 
-7. **`delete_restaurant_note`** - Delete a note
-   * Parameters: note_id
-   * Returns: Success confirmation
+### Meal Plans
 
-### Review Analysis Tool
+* `create_meal_plan` - Create plan with restaurant array
+* `get_meal_plans` - List plans
+* `update_meal_plan` - Update plan
+* `delete_meal_plan` - Delete plan
 
-8. **`ask_about_reviews`** - Answer questions about restaurant reviews using Foundation Models
-   * Parameters: restaurant_ids (list), question
-   * Returns: AI-generated answer based on review content
+### Preferences
 
-### Favorites Management Tools
+* `save_preferences` - Save cuisines, dietary restrictions, budget, ambiance
+* `get_preferences` - Retrieve saved preferences
 
-9. **`save_favorite`** - Add a restaurant to favorites
-   * Parameters: user_id, restaurant_id, notes (optional)
-   * Returns: Success confirmation
-
-10. **`get_favorites`** - Retrieve user's favorite restaurants
-    * Parameters: user_id
-    * Returns: List of favorites with restaurant details
-
-11. **`delete_favorite`** - Remove a restaurant from favorites
-    * Parameters: user_id, restaurant_id
-    * Returns: Success confirmation
-
-### Meal Plan Tools
-
-12. **`create_meal_plan`** - Create a meal plan with multiple restaurants
-    * Parameters: user_id, plan_name, restaurant_ids (array), description (optional), date (optional)
-    * Returns: Created plan with plan_id
-
-13. **`get_meal_plans`** - Retrieve user's meal plans
-    * Parameters: user_id
-    * Returns: List of meal plans with restaurant IDs and metadata
-
-14. **`update_meal_plan`** - Update an existing meal plan
-    * Parameters: plan_id, user_id, plan_name (optional), description (optional), restaurant_ids (optional), date (optional)
-    * Returns: Success confirmation
-
-15. **`delete_meal_plan`** - Delete a meal plan
-    * Parameters: plan_id, user_id
-    * Returns: Success confirmation
-
-### User Preferences Tools
-
-16. **`save_preferences`** - Save or update user dining preferences
-    * Parameters: user_id, preferred_cuisines, dietary_restrictions, budget_range, preferred_ambiance
-    * Returns: Success confirmation
-
-17. **`get_preferences`** - Retrieve user's saved preferences
-    * Parameters: user_id
-    * Returns: Preferences object with cuisines, restrictions, budget, ambiance
-
-**Database Schemas**: Lakebase Postgres table structures
+### Database Schema
 
 ```sql
--- Restaurant notes with ARRAY tags
+-- Notes with ARRAY tags
 CREATE TABLE restaurant_notes (
     note_id SERIAL PRIMARY KEY,
     user_id TEXT NOT NULL,
     restaurant_id TEXT NOT NULL,
     note_text TEXT NOT NULL,
-    tags TEXT[],  -- Postgres ARRAY type
+    tags TEXT[],
     personal_rating NUMERIC(2, 1) CHECK (personal_rating >= 0 AND personal_rating <= 5),
     visit_date DATE,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- User favorites
+-- Favorites
 CREATE TABLE favorites (
     user_id TEXT NOT NULL,
     restaurant_id TEXT NOT NULL,
@@ -618,19 +307,19 @@ CREATE TABLE favorites (
     PRIMARY KEY (user_id, restaurant_id)
 );
 
--- Meal plans
+-- Meal plans with ARRAY
 CREATE TABLE meal_plans (
     id SERIAL PRIMARY KEY,
     user_id TEXT NOT NULL,
     plan_name TEXT NOT NULL,
     description TEXT,
-    restaurant_ids TEXT[],  -- Postgres ARRAY type
+    restaurant_ids TEXT[],
     date DATE,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- User preferences
+-- Preferences
 CREATE TABLE user_preferences (
     user_id TEXT PRIMARY KEY,
     preferred_cuisines TEXT,
@@ -650,226 +339,94 @@ CREATE TABLE user_preferences (
 
 * Databricks workspace with Apps V2
 * Python 3.11+
-* Yelp Fusion API key (free tier: 5000 req/day)
+* Yelp Fusion API key (free tier: 5000 requests/day)
 
-### Step 1: Get Yelp API Key
+### 1. Yelp API Key
 
-1. Go to [Yelp Fusion](https://www.yelp.com/developers/v3/manage_app)
-2. Create app (name + description)
-3. Copy API Key (format: `AbCdEf123...`)
-4. Authentication uses Bearer token:
-   ```bash
-   Authorization: Bearer YOUR_API_KEY
-   ```
+1. Create app at [Yelp Fusion](https://www.yelp.com/developers/v3/manage_app)
+2. Copy API key
+3. Authentication: Bearer token in `Authorization` header
 
-### Step 2: Set Up Lakebase Postgres
+### 2. Lakebase Postgres Setup
 
-**Required tables**:
-- `restaurants` - core restaurant data
-- `restaurant_embeddings` - 384-dim vectors for semantic search
-- `review_embeddings` - review text with embeddings
-- `restaurant_notes` - user notes (tags, ratings, visit dates)
-- `favorites` - user favorites
-- `meal_plans` - meal planning data
-- `user_preferences` - user dietary preferences
+Create 7 tables: `restaurants`, `restaurant_embeddings`, `review_embeddings`, `restaurant_notes`, `favorites`, `meal_plans`, `user_preferences`.
 
-**Data ingestion**:
-1. Run `notebooks/ingest_restaurants_embeddings` to fetch from Yelp API and generate embeddings (SentenceTransformer)
-2. Run `notebooks/ingest_reviews_embeddings` for review data
+Ingest data:
+* `notebooks/ingest_restaurants_embeddings` - Yelp API → 384-dim SentenceTransformer embeddings
+* `notebooks/ingest_reviews_embeddings` - Review text with embeddings
 
-**Configure connection**:
+Store connection URL:
 ```bash
 databricks secrets put-secret restaurant-app lakebase-connection-url
 # Format: postgres://user:pass@host:port/database
 ```
 
-### Step 3: Configure Databricks Secrets
+### 3. Databricks Secrets
 
 ```bash
-# Create secret scope
 databricks secrets create-scope restaurant-app
-
-# Store Yelp API key (plain text)
 databricks secrets put-secret restaurant-app yelp-api-key
-# Paste your Yelp Fusion API key when prompted
 ```
 
-### Step 4: Deploy Flask Web Application
+### 4. Deploy App
 
-1. **Navigate to app directory**:
-   ```bash
-   cd app
-   ```
+```bash
+cd app
+databricks apps create ai-restaurant-planner --description "AI Restaurant Planner" --source-code-path ./
+databricks apps deploy ai-restaurant-planner
+databricks apps get ai-restaurant-planner  # Check status: RUNNING
+```
 
-2. **Review app.yaml configuration**:
-   ```yaml
-   command:
-     - python
-     - app.py
-   env:
-     - name: YELP_API_KEY
-       valueFrom: "{{secrets/restaurant-app/yelp-api-key}}"
-   ```
+Access: `https://<workspace>.cloud.databricks.com/apps/ai-restaurant-planner`
 
-3. **Deploy via Databricks Apps**:
-   ```bash
-   # Create the app
-   databricks apps create ai-restaurant-planner \
-     --description "AI Restaurant & Food Planner Web App" \
-     --source-code-path ./
-   
-   # Deploy
-   databricks apps deploy ai-restaurant-planner
-   
-   # Check status
-   databricks apps get ai-restaurant-planner
-   # Should show status: RUNNING
-   ```
+### 5. Verify
 
-4. **Access the application**:
-   * URL: `https://<workspace>.cloud.databricks.com/apps/ai-restaurant-planner`
-   * The web interface will load automatically
+**Search**: Type "Italian restaurants in San Francisco" → restaurant cards appear
 
-**UI Tabs**:
-* **Restaurant Assistant**: Natural language input → calls /api/search, /api/recommend, /api/meal-plans, /api/preferences
-* **Favorites**: Saved restaurants (backend ready, frontend not implemented)
+**Compare**: Select 2-5 cards → click "Compare" → KPIs + insights + table
 
----
-
-### Step 5: Verify Deployment
-
-**Test semantic search**:
-1. Restaurant Assistant tab
-2. Type: "Find Italian restaurants in San Francisco"
-3. Click Go
-4. Verify: Restaurant cards appear with ratings, categories
-
-**Test comparison**:
-1. Click 2-5 restaurant cards (highlights them)
-2. Click "Compare" in floating bar
-3. Verify: KPI cards, insights text, side-by-side table
-
-**Test recommendations**:
-1. Type: "Recommend romantic dinner spots"
-2. Click Go
-3. Verify: Top 3 scored results with 🥇/🥈/🥉 medals
+**Recommend**: Type "romantic dinner spots" → top 3 with 🥇/🥈/🥉 medals
 
 ## 🛠️ Technical Deep Dive
 
-### External API: Yelp Fusion
+### Yelp Fusion API
 
-**Base URL**: `https://api.yelp.com/v3`
+Base: `https://api.yelp.com/v3`
 
-**Authentication**: Bearer token via `Authorization` header
-```bash
-Authorization: Bearer YOUR_API_KEY_HERE
-```
+Endpoints:
+* `GET /businesses/search` - Location, term, categories, price, open_now
+* `GET /businesses/{id}` - Full details (hours, photos, transactions)
+* `GET /businesses/{id}/reviews` - Up to 3 reviews per restaurant
 
-**Endpoints used**:
-1. **Search** - `GET /businesses/search`
-   * Params: location, term, categories, price, open_now, limit
-   * Rate: Main endpoint for keyword search
+Rate limits: 5,000 req/day (free), 25,000+ (paid)
 
-2. **Business Details** - `GET /businesses/{id}`
-   * Returns: Full details including hours, photos, transactions
-
-3. **Reviews** - `GET /businesses/{id}/reviews`
-   * Returns: Up to 3 user reviews per restaurant
-
-**Rate Limits**:
-* Free tier: **5,000 requests/day**
-* Paid tier: 25,000+ requests/day
-* Per-second: Not specified (client implements polite delays)
-
-**Error handling**:
-* 429 Too Many Requests → exponential backoff
-* 400 Bad Request → location validation hints
-* Network errors → graceful degradation
-
----
+Error handling: 429 → exponential backoff, 400 → validation hints, network → graceful degradation
 
 ### Scoring Engine
 
-**File**: `mcp_server/recommendation_engine.py`
+`mcp_server/recommendation_engine.py` - Weighted multi-factor scoring
 
-**Algorithm**: Weighted multi-factor scoring with transparent evidence generation
+**Formulas**:
+* Rating: `(rating / 5.0) * 100` (linear)
+* Popularity: `(log(reviews + 1) / log(max + 1)) * 100` (log-scaled)
+* Cuisine: 100 if match, 0 otherwise
+* Price: `100 - (abs(user_max - restaurant_price) * 33.3)`
 
-```python
-class ScoringEngine:
-    def __init__(self,
-        w_rating=0.35,      # Yelp star rating (0-5)
-        w_popularity=0.25,  # Review count (log-scaled)
-        w_cuisine=0.30,     # Cuisine match
-        w_price=0.10        # Budget alignment
-    )
-    
-    def score_restaurants(self, restaurants, preferences):
-        # Score each restaurant 0-100 per factor
-        # Weighted sum → total_score (percentage)
-        # Generate evidence array explaining each score
-        return sorted(scored_restaurants, key=lambda x: x['score'], reverse=True)
-```
+**Weights**: Rating 35%, Popularity 25%, Cuisine 30%, Price 10%
 
-**Scoring formulas**:
-* **Rating**: `(rating / 5.0) * 100` (linear percentage)
-* **Popularity**: `(log(review_count + 1) / log(max_reviews + 1)) * 100` (log-scaled percentage)
-* **Cuisine**: `100` if match, `0` if no match (exact matching)
-* **Price**: `100 - (abs(user_max - restaurant_price) * 33.3)` (distance from budget)
+Output: Total score 0-100%, factor breakdown, evidence array
 
-**Output structure**:
-```json
-{
-  "restaurant": {"name": "Bella Italia", "rating": 4.5, ...},
-  "score": 87.5,
-  "scoring_factors": {
-    "rating_score": 90.0,
-    "popularity_score": 82.0,
-    "cuisine_match_score": 100.0,
-    "price_match_score": 70.0
-  },
-  "evidence": [
-    "High rating: 4.5/5 stars based on 230 reviews",
-    "Popular: 230 reviews",
-    "Cuisine match: Italian",
-    "Price level: $ (within budget)"
-  ]
-}
-```
+### Comparison Analysis
 
----
+`app/app.py` `/api/compare` endpoint
 
-### Comparison Analysis Engine
+Generates insights:
+* Highest-rated restaurant
+* Most popular (review count)
+* Price diversity (varied vs similar)
+* Cuisine variety
 
-**File**: `app/app.py` (in `/api/compare` endpoint)
-
-**AI-Generated Insights**: The comparison endpoint generates contextual analysis:
-
-```python
-def generate_comparison_summary(restaurants):
-    # Analyze rating patterns
-    highest_rated = max(restaurants, key=lambda r: r['rating'])
-    
-    # Analyze popularity
-    most_reviewed = max(restaurants, key=lambda r: r['review_count'])
-    
-    # Analyze price diversity
-    price_levels = set(r['price'] for r in restaurants)
-    price_diversity = "varied" if len(price_levels) > 1 else "similar"
-    
-    # Analyze cuisine variety
-    all_categories = set()
-    for r in restaurants:
-        all_categories.update(r['categories'])
-    
-    # Generate natural language summary
-    return f"Among these options, {highest_rated['name']} stands out with the highest rating..."
-```
-
-**Generated Insights Include**:
-* **Rating Analysis**: Identifies highest-rated restaurant and rating patterns
-* **Popularity Assessment**: Highlights most-reviewed (most popular) options
-* **Price Diversity**: Notes price range and budget considerations
-* **Cuisine Variety**: Describes cuisine diversity across selections
+Returns natural language summary with rating patterns, price range, cuisine diversity
 
 
 ## 🛍️ Usage Examples
@@ -926,35 +483,35 @@ def generate_comparison_summary(restaurants):
 
 ## 📚 Documentation
 
-* `README.md`: This file (setup, API reference, architecture)
-* `app/app.yaml`: Databricks Apps configuration
-* `app/app.py`: Flask routes with inline docstrings
+* `README.md` - Setup, API reference, architecture
+* `app/app.yaml` - Databricks Apps configuration
+* `app/app.py` - Flask routes with docstrings
 
 ## 🐛 Known Limitations
 
-1. **Static data**: Restaurants/reviews ingested once daily, not live from Yelp
-2. **US-centric**: Yelp Fusion API optimized for US locations
-3. **5-restaurant Q&A cap**: `/api/ask` accepts maximum 5 restaurant_ids
-4. **No auth**: Single-user mode (user_id='anonymous'). Multi-user needs Databricks auth header
-5. **Review lag**: Q&A answers only from reviews in `review_embeddings` table
+1. **Static data** - Daily ingestion, not live from Yelp
+2. **US-centric** - Yelp Fusion API optimized for US
+3. **5-restaurant Q&A cap** - `/api/ask` maximum 5 IDs
+4. **No auth** - Single-user mode (`user_id='anonymous'`)
+5. **Review lag** - Q&A from `review_embeddings` table only
 
 ---
 
 ## 📜 License
 
-MIT License - feel free to use for learning and reference.
+MIT
 
 ---
 
 ## 📊 Project Stats
 
-* **Stack**: Flask + vanilla JS + Lakebase Postgres
-* **API**: 17 REST endpoints (Flask) + 17 MCP tools (Python)
-* **Tables**: 7 (restaurants, restaurant_embeddings, review_embeddings, restaurant_notes, favorites, meal_plans, user_preferences)
-* **Embeddings**: SentenceTransformer all-MiniLM-L6-v2 (384-dim)
-* **Vector search**: pgvector `<=>` operator (cosine similarity)
-* **LLM**: Databricks Foundation Models API (Meta Llama 3.1 70B)
-* **Scoring**: 4-factor weighted sum (rating 35%, popularity 25%, cuisine 30%, price 10%)
-* **Deployment**: Databricks Apps V2 (container runtime)
+* Stack: Flask + vanilla JS + Lakebase Postgres
+* API: 17 REST endpoints + 17 MCP tools
+* Tables: 7 (restaurants, restaurant_embeddings, review_embeddings, restaurant_notes, favorites, meal_plans, user_preferences)
+* Embeddings: SentenceTransformer all-MiniLM-L6-v2 (384-dim)
+* Vector search: pgvector `<=>` cosine similarity
+* LLM: Databricks Foundation Models (Llama 3.1 70B)
+* Scoring: 4-factor weighted (rating 35%, popularity 25%, cuisine 30%, price 10%)
+* Deployment: Databricks Apps V2
 
 ---
