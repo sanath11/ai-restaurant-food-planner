@@ -584,28 +584,36 @@ Provide a helpful, concise answer based on the reviews above."""
         logger.error(f"Ask error: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/favorites")
+# ===== FAVORITES ENDPOINTS =====
+
+@app.route("/api/favorites/get")
 @require_auth
-def api_favorites():
+def api_get_favorites():
     """Get user's saved restaurants."""
     user = get_user_from_request()
     
     try:
         client = get_lakebase_client()
         conn = client._get_connection()
+        cursor = conn.cursor()
         try:
-            cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT r.* FROM restaurants r
-                JOIN saved_restaurants sr ON r.id = sr.restaurant_id
-                WHERE sr.user_id = %s
-                ORDER BY sr.saved_at DESC
-                LIMIT 50
+                SELECT restaurant_id, restaurant_name, saved_at 
+                FROM favorites 
+                WHERE user_id = %s
+                ORDER BY saved_at DESC
                 """,
                 (user['email'],)
             )
-            favorites = cursor.fetchall()
+            rows = cursor.fetchall()
+            favorites = []
+            for row in rows:
+                favorites.append({
+                    'restaurant_id': row[0],
+                    'restaurant_name': row[1],
+                    'saved_at': row[2].isoformat() if row[2] else None
+                })
             return jsonify({
                 "success": True,
                 "favorites": favorites
@@ -613,11 +621,426 @@ def api_favorites():
         finally:
             cursor.close()
     except Exception as e:
-        logger.error(f"Favorites error: {e}", exc_info=True)
+        logger.error(f"Get favorites error: {e}", exc_info=True)
         return jsonify({
-            "error": str(e),
-            "hint": "Check that LAKEBASE_URL secret is configured and database tables exist"
+            "error": str(e)
         }), 500
+
+@app.route("/api/favorites/save", methods=["POST"])
+@require_auth
+def api_save_favorite():
+    """Save a restaurant to favorites."""
+    user = get_user_from_request()
+    data = request.get_json()
+    
+    restaurant_id = data.get('restaurant_id')
+    restaurant_name = data.get('restaurant_name', '')
+    
+    if not restaurant_id:
+        return jsonify({"error": "restaurant_id is required"}), 400
+    
+    try:
+        client = get_lakebase_client()
+        conn = client._get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO favorites (user_id, restaurant_id, restaurant_name)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (user_id, restaurant_id) DO NOTHING
+                """,
+                (user['email'], restaurant_id, restaurant_name)
+            )
+            conn.commit()
+            return jsonify({"success": True})
+        finally:
+            cursor.close()
+    except Exception as e:
+        logger.error(f"Save favorite error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/favorites/remove", methods=["POST"])
+@require_auth
+def api_remove_favorite():
+    """Remove a restaurant from favorites."""
+    user = get_user_from_request()
+    data = request.get_json()
+    
+    restaurant_id = data.get('restaurant_id')
+    
+    if not restaurant_id:
+        return jsonify({"error": "restaurant_id is required"}), 400
+    
+    try:
+        client = get_lakebase_client()
+        conn = client._get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                DELETE FROM favorites 
+                WHERE user_id = %s AND restaurant_id = %s
+                """,
+                (user['email'], restaurant_id)
+            )
+            conn.commit()
+            return jsonify({"success": True})
+        finally:
+            cursor.close()
+    except Exception as e:
+        logger.error(f"Remove favorite error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+# ===== MEAL PLANS ENDPOINTS =====
+
+@app.route("/api/meal-plans/get")
+@require_auth
+def api_get_meal_plans():
+    """Get user's meal plans."""
+    user = get_user_from_request()
+    
+    try:
+        client = get_lakebase_client()
+        meal_plans_data = client.get_user_meal_plans(user['email'])
+        
+        # Format for frontend
+        meal_plans = []
+        for plan in meal_plans_data:
+            meal_plans.append({
+                'id': plan['id'],
+                'plan_name': plan['plan_name'],
+                'description': plan.get('description', ''),
+                'restaurant_ids': plan.get('restaurant_ids', []),
+                'date': plan.get('date').isoformat() if plan.get('date') else None,
+                'created_at': plan['created_at'].isoformat() if plan.get('created_at') else None,
+                'updated_at': plan['updated_at'].isoformat() if plan.get('updated_at') else None
+            })
+        
+        return jsonify({
+            "success": True,
+            "meal_plans": meal_plans
+        })
+    except Exception as e:
+        logger.error(f"Get meal plans error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/meal-plans/create", methods=["POST"])
+@require_auth
+def api_create_meal_plan():
+    """Create a new meal plan."""
+    user = get_user_from_request()
+    data = request.get_json()
+    
+    plan_name = data.get('plan_name', '').strip()
+    restaurant_ids = data.get('restaurant_ids', [])
+    description = data.get('description', '').strip()
+    date = data.get('date', None)
+    
+    if not plan_name:
+        return jsonify({"error": "plan_name is required"}), 400
+    
+    try:
+        client = get_lakebase_client()
+        plan_id = client.create_meal_plan(
+            user_id=user['email'],
+            plan_name=plan_name,
+            restaurant_ids=restaurant_ids,
+            description=description if description else None,
+            date=date
+        )
+        
+        if plan_id > 0:
+            return jsonify({
+                "success": True,
+                "plan_id": plan_id
+            })
+        else:
+            return jsonify({"success": False, "error": "Failed to create meal plan"}), 500
+    except Exception as e:
+        logger.error(f"Create meal plan error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/meal-plans/delete", methods=["POST"])
+@require_auth
+def api_delete_meal_plan():
+    """Delete a meal plan."""
+    user = get_user_from_request()
+    data = request.get_json()
+    
+    plan_id = data.get('plan_id')
+    
+    if not plan_id:
+        return jsonify({"error": "plan_id is required"}), 400
+    
+    try:
+        client = get_lakebase_client()
+        success = client.delete_meal_plan(plan_id=plan_id, user_id=user['email'])
+        
+        if success:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "error": "Meal plan not found or already deleted"}), 404
+    except Exception as e:
+        logger.error(f"Delete meal plan error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+# ===== PREFERENCES ENDPOINTS =====
+
+@app.route("/api/preferences/get")
+@require_auth
+def api_get_preferences():
+    """Get user preferences."""
+    user = get_user_from_request()
+    
+    try:
+        client = get_lakebase_client()
+        preferences = client.get_user_preferences(user['email'])
+        
+        # Format for frontend
+        if preferences:
+            formatted_prefs = {
+                'preferred_cuisines': preferences.get('preferred_cuisines') or '',
+                'dietary_restrictions': preferences.get('dietary_restrictions') or '',
+                'budget_range': preferences.get('budget_range') or '',
+                'preferred_ambiance': preferences.get('preferred_ambiance') or '',
+                'updated_at': preferences.get('updated_at').isoformat() if preferences.get('updated_at') else None
+            }
+        else:
+            formatted_prefs = {}
+        
+        return jsonify({
+            "success": True,
+            "preferences": formatted_prefs
+        })
+    except Exception as e:
+        logger.error(f"Get preferences error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/preferences/save", methods=["POST"])
+@require_auth
+def api_save_preferences():
+    """Save user preferences."""
+    user = get_user_from_request()
+    data = request.get_json()
+    
+    preferred_cuisines = data.get('preferred_cuisines', '').strip()
+    dietary_restrictions = data.get('dietary_restrictions', '').strip()
+    budget_range = data.get('budget_range', '').strip()
+    preferred_ambiance = data.get('preferred_ambiance', '').strip()
+    
+    try:
+        client = get_lakebase_client()
+        success = client.save_user_preferences(
+            user_id=user['email'],
+            preferred_cuisines=preferred_cuisines,
+            dietary_restrictions=dietary_restrictions,
+            budget_range=budget_range,
+            preferred_ambiance=preferred_ambiance
+        )
+        
+        if success:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "error": "Failed to save preferences"}), 500
+    except Exception as e:
+        logger.error(f"Save preferences error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+# ===== NOTES ENDPOINTS =====
+
+@app.route("/api/notes", methods=["GET"])
+@require_auth
+def api_get_notes():
+    """Get notes for the current user, optionally filtered by restaurant."""
+    user = get_user_from_request()
+    restaurant_id = request.args.get("restaurant_id")
+    limit = min(int(request.args.get("limit", 100)), 500)
+    
+    try:
+        client = get_lakebase_client()
+        
+        # Check if save_note method exists (requires manual integration)
+        if not hasattr(client, 'get_user_notes'):
+            return jsonify({
+                "error": "Notes feature not yet integrated",
+                "hint": "Add notes methods to lakebase_client.py from LAKEBASE_NOTES_METHODS.txt"
+            }), 501
+        
+        notes = client.get_user_notes(
+            user_id=user['email'],
+            restaurant_id=restaurant_id,
+            limit=limit
+        )
+        
+        return jsonify({
+            "success": True,
+            "notes": notes,
+            "count": len(notes)
+        })
+    
+    except Exception as e:
+        logger.error(f"Get notes error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/notes", methods=["POST"])
+@require_auth
+def api_create_note():
+    """Save a new note for a restaurant."""
+    user = get_user_from_request()
+    data = request.get_json()
+    
+    restaurant_id = data.get("restaurant_id")
+    note_text = data.get("note_text", "").strip()
+    tags = data.get("tags", [])
+    personal_rating = data.get("personal_rating")
+    visit_date = data.get("visit_date")
+    
+    # Validate required fields
+    if not restaurant_id:
+        return jsonify({"error": "restaurant_id is required"}), 400
+    
+    if not note_text:
+        return jsonify({"error": "note_text cannot be empty"}), 400
+    
+    # Validate personal_rating if provided
+    if personal_rating is not None:
+        try:
+            personal_rating = float(personal_rating)
+            if not (0 <= personal_rating <= 5):
+                return jsonify({"error": "personal_rating must be between 0 and 5"}), 400
+        except (TypeError, ValueError):
+            return jsonify({"error": "personal_rating must be a number"}), 400
+    
+    try:
+        client = get_lakebase_client()
+        
+        # Check if save_note method exists (requires manual integration)
+        if not hasattr(client, 'save_note'):
+            return jsonify({
+                "error": "Notes feature not yet integrated",
+                "hint": "Add notes methods to lakebase_client.py from LAKEBASE_NOTES_METHODS.txt"
+            }), 501
+        
+        note_id = client.save_note(
+            user_id=user['email'],
+            restaurant_id=restaurant_id,
+            note_text=note_text,
+            tags=tags,
+            personal_rating=personal_rating,
+            visit_date=visit_date
+        )
+        
+        if note_id:
+            return jsonify({
+                "success": True,
+                "note_id": note_id,
+                "message": "Note saved successfully"
+            }), 201
+        else:
+            return jsonify({"error": "Failed to save note"}), 500
+    
+    except Exception as e:
+        logger.error(f"Create note error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/notes/<int:note_id>", methods=["PUT", "PATCH"])
+@require_auth
+def api_update_note(note_id):
+    """Update an existing note."""
+    user = get_user_from_request()
+    data = request.get_json()
+    
+    note_text = data.get("note_text")
+    tags = data.get("tags")
+    personal_rating = data.get("personal_rating")
+    visit_date = data.get("visit_date")
+    
+    # Validate at least one field is provided
+    if all(v is None for v in [note_text, tags, personal_rating, visit_date]):
+        return jsonify({
+            "error": "At least one field must be provided to update",
+            "hint": "Provide note_text, tags, personal_rating, or visit_date"
+        }), 400
+    
+    # Validate personal_rating if provided
+    if personal_rating is not None:
+        try:
+            personal_rating = float(personal_rating)
+            if not (0 <= personal_rating <= 5):
+                return jsonify({"error": "personal_rating must be between 0 and 5"}), 400
+        except (TypeError, ValueError):
+            return jsonify({"error": "personal_rating must be a number"}), 400
+    
+    try:
+        client = get_lakebase_client()
+        
+        # Check if update_note method exists (requires manual integration)
+        if not hasattr(client, 'update_note'):
+            return jsonify({
+                "error": "Notes feature not yet integrated",
+                "hint": "Add notes methods to lakebase_client.py from LAKEBASE_NOTES_METHODS.txt"
+            }), 501
+        
+        success = client.update_note(
+            note_id=note_id,
+            user_id=user['email'],
+            note_text=note_text.strip() if note_text else None,
+            tags=tags,
+            personal_rating=personal_rating,
+            visit_date=visit_date
+        )
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "note_id": note_id,
+                "message": "Note updated successfully"
+            })
+        else:
+            return jsonify({
+                "error": "Note not found or you don't have permission to update it"
+            }), 404
+    
+    except Exception as e:
+        logger.error(f"Update note error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/notes/<int:note_id>", methods=["DELETE"])
+@require_auth
+def api_delete_note(note_id):
+    """Delete a note."""
+    user = get_user_from_request()
+    
+    try:
+        client = get_lakebase_client()
+        
+        # Check if delete_note method exists (requires manual integration)
+        if not hasattr(client, 'delete_note'):
+            return jsonify({
+                "error": "Notes feature not yet integrated",
+                "hint": "Add notes methods to lakebase_client.py from LAKEBASE_NOTES_METHODS.txt"
+            }), 501
+        
+        success = client.delete_note(
+            note_id=note_id,
+            user_id=user['email']
+        )
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "note_id": note_id,
+                "message": "Note deleted successfully"
+            })
+        else:
+            return jsonify({
+                "error": "Note not found or you don't have permission to delete it"
+            }), 404
+    
+    except Exception as e:
+        logger.error(f"Delete note error: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     host = os.getenv("FLASK_RUN_HOST", "0.0.0.0")

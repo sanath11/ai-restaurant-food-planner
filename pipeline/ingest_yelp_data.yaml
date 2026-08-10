@@ -15,7 +15,7 @@ resources:
               yelp_secret_scope: restaurant-app
               yelp_secret_key: yelp-api-key
               lakebase_secret_scope: restaurant-app
-              lakebase_secret_key: lakebase-connection
+              lakebase_secret_key: lakebase-url
               embedding_model: sentence-transformers/all-MiniLM-L6-v2
             source: WORKSPACE
         - task_key: ingest_review_embeddings

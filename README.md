@@ -1,6 +1,6 @@
 # 🍽️ AI Restaurant & Food Planner
 
-> *Intelligent restaurant discovery with semantic search, powered by Lakebase Postgres, pgvector cosine similarity, and transparent AI scoring on Databricks*
+> Restaurant search with semantic embeddings, multi-factor scoring, and review Q&A.
 
 [![Databricks](https://img.shields.io/badge/Databricks-Apps%20V2-FF3621?logo=databricks)](https://www.databricks.com)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
@@ -9,153 +9,111 @@
 
 ## Overview
 
-The **AI Restaurant & Food Planner** is a modern web application built on Databricks that helps users discover and compare restaurants through an intuitive interface. This project demonstrates:
+A Flask web application that searches restaurants using pgvector embeddings and scores them with transparent multi-factor weighting. Deployed on Databricks Apps V2.
 
-* **Modern web UI** with Flask backend and responsive frontend design
-* **Semantic search** using pgvector cosine similarity for intelligent restaurant discovery
-* **Daily data ingestion** from Yelp API into Lakebase Postgres with vector embeddings
-* **Review-based Q&A** powered by Databricks Foundation Models for insights
-* **Intelligent comparison** with AI-generated analysis
-* **Transparent AI recommendations** with explainable multi-factor scoring
-* **Lakebase Postgres** for restaurant data, reviews, and embeddings
-* **Databricks Apps V2** deployment with secret management
+**What it does**:
+* Searches restaurants by natural language: "romantic Italian with outdoor seating"
+* Compares 2-5 restaurants with AI-generated insights
+* Scores recommendations: rating (35%), popularity (25%), cuisine (30%), price (10%)
+* Answers questions about reviews using Llama 3.1 70B
+* Saves personal notes with tags and ratings
+
+**Data flow**:
+* Yelp Fusion API → Lakebase Postgres (restaurants + reviews)
+* SentenceTransformer generates 384-dim embeddings
+* pgvector `<=>` operator for cosine similarity search
+* Foundation Models for review-based Q&A
 
 ## 🎯 Key Features
 
-### 🍽️ Modern Web Interface
-* **Contemporary design** with vibrant red color scheme
-* **Single unified section** with three tabs: Search, Recommend, Compare
-* **Responsive layout** optimized for desktop and mobile
-* **Real-time updates** with smooth animations and transitions
-* **Click-to-select** restaurants with visual feedback
-* **Floating action bar** for quick comparison access
+### 🍽️ Web Interface
+Single-page application with two tabs:
+* **Restaurant Assistant**: Unified natural language input for search, recommendations, meal planning, and preferences
+* **Favorites**: Saved restaurants (backend ready, UI not implemented)
 
-### 🔍 Smart Restaurant Search
-* **Semantic search** using pgvector cosine similarity on restaurant embeddings
-* **Natural language queries** - search for "romantic Italian with outdoor seating"
-* **Daily data refresh** from Yelp API ingestion job into Lakebase Postgres
-* **Rich restaurant cards** with ratings, reviews, categories, and similarity scores
-* **Interactive selection** - click any card to select for questions
-* **Ask questions** about selected restaurants using their reviews with Foundation Models
-* **Real-time KPIs**: Total restaurants, average rating, price range, top category
+Restaurant cards are selectable. When 2+ are selected, a floating compare bar appears.
 
-### ⚖️ Intelligent Comparison
-* **Select 2-5 restaurants** by clicking cards
-* **AI-generated analysis** with contextual insights:
-  * Identifies highest-rated and most popular options
-  * Analyzes rating patterns and price diversity
-  * Highlights cuisine variety across selections
-* **Visual KPI cards**: Highest Rated, Most Popular, Average Rating, Price Range
-* **Detailed comparison table** with ratings, reviews, prices, and categories
-* **Floating compare bar** shows selection count and quick actions
+### 🔍 Restaurant Search
+Semantic search using pgvector cosine similarity:
+* **Input**: Natural language ("romantic Italian with outdoor seating")
+* **Query**: Generates 384-dim embedding, searches via `<=>` operator
+* **Output**: Restaurant cards with ratings, reviews, categories, similarity scores
+* **KPIs**: Total count, average rating, price range, top category
+* **Q&A**: Select restaurants and ask questions about their reviews (Llama 3.1 70B)
 
-### 🎯 AI-Powered Recommendations
+### ⚖️ Comparison
+Analyze 2-5 selected restaurants:
+* **KPI cards**: Highest rated, most popular, average rating, price range
+* **AI insights**: Rating patterns, price diversity, cuisine variety
+* **Comparison table**: Side-by-side ratings, review counts, prices, categories
 
-**Top 3 Personalized Picks** with premium visual design:
-* 🥇 Gold medal for #1 recommendation with special highlighting
-* 🥈 Silver and 🥉 Bronze medals for #2 and #3
-* Large, prominent score display with gradient styling
-* Enhanced card design with hover effects and top accent bars
+### 📝 Personal Notes
+CRUD operations for restaurant notes:
+* **Tags**: Postgres ARRAY type ("favorite", "date-night", "must-try")
+* **Personal rating**: 0-5 scale, independent of Yelp
+* **Visit date**: DATE field for tracking visits
+* **Schema**: `restaurant_notes` table with SERIAL primary key
 
-**Multi-Factor Transparent Scoring**:
+### 🎯 Recommendations
+Top 3 results with transparent scoring:
 
-1. **Rating** (35%) - Yelp star rating quality indicator
-2. **Popularity** (25%) - Review count as social proof
-3. **Cuisine Match** (30%) - Alignment with user preferences
-4. **Price Match** (10%) - Budget compatibility
+**Weights**:
+* Rating: 35% (Yelp stars / 5.0)
+* Popularity: 25% (log-scaled review count)
+* Cuisine match: 30% (exact match)
+* Price match: 10% (distance from budget)
 
-**Explainable Results**: Every recommendation includes:
-* Total score percentage (0-100%) displayed prominently
-* Factor-by-factor breakdown in clean grid layout
-* Evidence list explaining why each restaurant was picked
-* Ranked by relevance with medal indicators
+**Output**:
+* Total score (0-100%)
+* Factor breakdown per restaurant
+* Evidence explaining each score
+* Medal indicators (🥇/🥈/🥉)
 
 ## 🔮 Future Scope
 
-The following features are planned for future releases:
+**Backend tables exist, frontend not implemented**:
 
-### 👥 User & Group Favorites
-* **Personal favorites** - Save and organize favorite restaurants
-* **Group favorites** - Create shared lists with friends and family
-* **Collaborative planning** - Group members can vote on dining options
-* **Social recommendations** - Get suggestions based on group preferences
-* **Shared dining history** - Track restaurants visited together
-
-### 🎯 Enhanced Personalization
-* **Dietary restrictions** - Filter by vegetarian, vegan, gluten-free, etc.
-* **Cuisine preferences** - Learn from past searches and selections
-* **Budget tracking** - Set and monitor dining budgets
-* **Visit history** - Remember restaurants you've tried
-
-### 📊 Advanced Analytics
-* **Spending insights** - Track dining expenses over time
-* **Cuisine diversity** - Visualize eating patterns
-* **Group activity** - See most active members and popular picks
-* **Recommendation accuracy** - Learn which factors matter most to you
-
-### 🔔 Notifications & Reminders
-* **New restaurant alerts** - Get notified about openings in favorite areas
-* **Price changes** - Track updates to restaurant pricing
-* **Special events** - Be informed about restaurant promotions
-* **Dining reminders** - Schedule and coordinate group dinners
-
-*Note: The backend `/api/favorites` endpoint is already implemented and ready for integration once the frontend features are developed.*
+* Favorites management UI (`favorites` table ready)
+* Meal planning calendar (`meal_plans` table with ARRAY of restaurant IDs)
+* User preferences UI (`user_preferences` table for cuisines, dietary restrictions, budget)
+* Search history tracking (no table)
+* Budget tracking (no table)
+* Spending analytics (no table)
+* Cuisine diversity visualization (no table)
+* Restaurant alerts (no table)
+* Price change tracking (no table)
 
 ## 🏛️ Architecture
 
-### System Architecture Diagram
+### System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    USER BROWSER                               │
-│                                                               │
-│     ┌─────────────────────────────────────────┐             │
-│     │   Frontend (HTML + JavaScript)          │             │
-│     │   - Modern responsive UI                │             │
-│     │   - Tabbed interface (Search/Recommend/ │             │
-│     │     Compare)                            │             │
-│     │   - Interactive restaurant cards        │             │
-│     │   - Real-time KPI updates               │             │
-│     └───────────────┬─────────────────────────┘             │
-│                     │                                         │
-│                     │ HTTPS (AJAX Requests)                  │
-│                     v                                         │
-└─────────────────────────────────────────────────────────────┘
-                      │
-                      v
-┌─────────────────────────────────────────────────────────────┐
-│              DATABRICKS APP (Flask Backend)                   │
-│                                                               │
-│     ┌─────────────────────────────────────────┐             │
-│     │   Flask Routes (app/app.py)             │             │
-│     │   - /api/search         (semantic)      │             │
-│     │   - /api/compare        (2-5 IDs)       │             │
-│     │   - /api/recommend      (AI scoring)    │             │
-│     │   - /api/details        (single ID)     │             │
-│     │   - /api/ask            (review Q&A)    │             │
-│     │   - /api/favorites      (user prefs)    │             │
-│     └───────────┬──────────────┬──────────────┘             │
-│                 │              │                              │
-└─────────────────┼──────────────┼──────────────────────────────┘
-                  │              │
-        ┌─────────┴──────┐   ┌───┴──────────┐
-        │                │   │              │
-        v                v   v              v
-┌────────────┐   ┌──────────────┐   ┌──────────────┐
-│ Lakebase   │   │ Scoring      │   │ Foundation   │
-│ Postgres   │   │ Engine       │   │ Models       │
-│            │   │              │   │              │
-│ - Restau-  │   │ Multi-factor │   │ - Review Q&A │
-│   rants    │   │ scoring:     │   │ - LLaMA 3.1  │
-│ - Reviews  │   │   • Rating   │   │   70B        │
-│ - pgvector │   │   • Popular  │   │              │
-│   embed-   │   │   • Cuisine  │   │              │
-│   dings    │   │   • Price    │   │              │
-│            │   │              │   │              │
-│ Cosine     │   │ - Evidence   │   │              │
-│ similarity │   │   generation │   │              │
-└────────────┘   └──────────────┘   └──────────────┘
+Browser (HTML/JS)
+  ↓ HTTPS fetch()
+Flask App (app/app.py)
+  ├─ /api/search       → Lakebase pgvector <=> cosine similarity
+  ├─ /api/compare      → Fetch 2-5 restaurants, generate text insights
+  ├─ /api/recommend    → recommendation_engine.py (4-factor scoring)
+  ├─ /api/details      → Single restaurant lookup
+  ├─ /api/ask          → Review Q&A via Llama 3.1 70B
+  └─ /api/favorites    → CRUD on favorites table
+  ↓
+Lakebase Postgres
+  ├─ restaurants (Yelp data)
+  ├─ restaurant_embeddings (384-dim vectors)
+  ├─ review_embeddings (review text + vectors)
+  ├─ restaurant_notes (user notes, tags ARRAY, ratings)
+  ├─ favorites (user_id, restaurant_id)
+  ├─ meal_plans (plan_id, restaurant_ids ARRAY)
+  └─ user_preferences (cuisines, dietary restrictions, budget)
 ```
+
+**Components**:
+* **Frontend**: Single-page app (index.html), vanilla JS, fetch() for API calls
+* **Backend**: Flask with 17 REST endpoints (app/app.py)
+* **Database**: Lakebase Postgres with pgvector extension (7 tables)
+* **Scoring**: recommendation_engine.py (rating 35%, popularity 25%, cuisine 30%, price 10%)
+* **LLM**: Databricks Foundation Models API (Llama 3.1 70B) for review Q&A
 
 ### Project Structure
 
@@ -378,14 +336,311 @@ The Flask backend exposes **6 REST API endpoints** for restaurant operations:
 
 ---
 
-### 6. `GET/POST /api/favorites`
+### 6. `GET /api/favorites/get`
 
-**User favorites management** (future implementation with Lakebase).
+**User favorites management** - retrieve saved favorite restaurants.
 
-**GET**: Retrieve user's favorite restaurants
-**POST**: Add/remove restaurants from favorites
+**Returns**:
+```json
+{
+  "success": true,
+  "total": 5,
+  "favorites": [
+    {
+      "restaurant_id": "restaurant-id",
+      "restaurant_name": "Restaurant Name",
+      "saved_at": "2024-03-15T10:30:00Z"
+    }
+  ]
+}
+```
 
-*Note: Endpoint structure is ready; Lakebase integration is in future scope.*
+### 7. `POST /api/favorites/save`
+
+**Add restaurant to favorites**.
+
+```json
+{
+  "restaurant_id": "restaurant-id",
+  "restaurant_name": "Restaurant Name"
+}
+```
+
+### 8. `POST /api/favorites/remove`
+
+**Remove restaurant from favorites**.
+
+```json
+{
+  "restaurant_id": "restaurant-id"
+}
+```
+
+### 9. `GET /api/meal-plans/get`
+
+**Retrieve user's meal plans**.
+
+**Returns**:
+```json
+{
+  "success": true,
+  "meal_plans": [
+    {
+      "id": 1,
+      "plan_name": "Weekend Brunch Tour",
+      "description": "Best brunch spots",
+      "restaurant_ids": ["id1", "id2", "id3"],
+      "date": "2024-03-23",
+      "created_at": "2024-03-15T10:00:00Z",
+      "updated_at": "2024-03-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+### 10. `POST /api/meal-plans/create`
+
+**Create a new meal plan**.
+
+```json
+{
+  "plan_name": "Weekend Food Tour",
+  "description": "Italian restaurants",
+  "restaurant_ids": ["id1", "id2"],
+  "date": "2024-03-30"
+}
+```
+
+### 11. `POST /api/meal-plans/delete`
+
+**Delete a meal plan**.
+
+```json
+{
+  "plan_id": 1
+}
+```
+
+### 12. `GET /api/preferences/get`
+
+**Retrieve user dining preferences**.
+
+**Returns**:
+```json
+{
+  "success": true,
+  "preferences": {
+    "preferred_cuisines": "Italian, Japanese",
+    "dietary_restrictions": "Vegetarian",
+    "budget_range": "$",
+    "preferred_ambiance": "Casual, Romantic"
+  }
+}
+```
+
+### 13. `POST /api/preferences/save`
+
+**Save or update user preferences**.
+
+```json
+{
+  "preferred_cuisines": "Italian, French",
+  "dietary_restrictions": "Vegetarian",
+  "budget_range": "$",
+  "preferred_ambiance": "Casual"
+}
+```
+
+### 14. `GET /api/notes/get`
+
+**Retrieve user's restaurant notes**.
+
+**Query Parameters**:
+* `restaurant_id` (optional): Filter by specific restaurant
+
+**Returns**:
+```json
+{
+  "success": true,
+  "notes": [
+    {
+      "note_id": 1,
+      "note_text": "Great ambiance!",
+      "tags": ["favorite", "date-night"],
+      "personal_rating": 5.0,
+      "visit_date": "2024-03-10",
+      "restaurant_name": "Bella Italia",
+      "created_at": "2024-03-15T10:00:00Z",
+      "updated_at": "2024-03-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+### 15. `POST /api/notes/create`
+
+**Create a restaurant note**.
+
+```json
+{
+  "restaurant_id": "restaurant-id",
+  "note_text": "Amazing food!",
+  "tags": ["favorite"],
+  "personal_rating": 5.0,
+  "visit_date": "2024-03-10"
+}
+```
+
+### 16. `POST /api/notes/update/<note_id>`
+
+**Update an existing note**.
+
+```json
+{
+  "note_text": "Still amazing!",
+  "tags": ["favorite", "must-visit"],
+  "personal_rating": 5.0
+}
+```
+
+### 17. `POST /api/notes/delete/<note_id>`
+
+**Delete a note** (no body required).
+
+---
+
+## 🧑‍💻 MCP Tools Reference
+
+The MCP server (`mcp_server/restaurant_mcp_server.py`) exposes **15 tools** for AI agents:
+
+### Restaurant Discovery Tools
+
+1. **`search_restaurants`** - Semantic search with pgvector cosine similarity
+   * Parameters: location, cuisine, keyword, price_level, open_now, limit
+   * Returns: List of restaurants with similarity scores
+
+2. **`get_restaurant_details`** - Get full details for a single restaurant
+   * Parameters: restaurant_id
+   * Returns: Complete restaurant information including hours and photos
+
+3. **`recommend_restaurant`** - AI-powered recommendations with transparent scoring
+   * Parameters: location, cuisines, max_price, min_rating, limit
+   * Returns: Top N scored restaurants with factor breakdown and evidence
+
+### Notes Management Tools
+
+4. **`save_restaurant_note`** - Create a new note for a restaurant
+   * Parameters: restaurant_id, note_text, tags (optional), personal_rating (optional), visit_date (optional)
+   * Returns: Created note with note_id
+
+5. **`get_restaurant_notes`** - Retrieve user's notes
+   * Parameters: restaurant_id (optional), limit
+   * Returns: List of notes, optionally filtered by restaurant
+
+6. **`update_restaurant_note`** - Update an existing note
+   * Parameters: note_id, note_text (optional), tags (optional), personal_rating (optional), visit_date (optional)
+   * Returns: Updated note
+
+7. **`delete_restaurant_note`** - Delete a note
+   * Parameters: note_id
+   * Returns: Success confirmation
+
+### Review Analysis Tool
+
+8. **`ask_about_reviews`** - Answer questions about restaurant reviews using Foundation Models
+   * Parameters: restaurant_ids (list), question
+   * Returns: AI-generated answer based on review content
+
+### Favorites Management Tools
+
+9. **`save_favorite`** - Add a restaurant to favorites
+   * Parameters: user_id, restaurant_id, notes (optional)
+   * Returns: Success confirmation
+
+10. **`get_favorites`** - Retrieve user's favorite restaurants
+    * Parameters: user_id
+    * Returns: List of favorites with restaurant details
+
+11. **`delete_favorite`** - Remove a restaurant from favorites
+    * Parameters: user_id, restaurant_id
+    * Returns: Success confirmation
+
+### Meal Plan Tools
+
+12. **`create_meal_plan`** - Create a meal plan with multiple restaurants
+    * Parameters: user_id, plan_name, restaurant_ids (array), description (optional), date (optional)
+    * Returns: Created plan with plan_id
+
+13. **`get_meal_plans`** - Retrieve user's meal plans
+    * Parameters: user_id
+    * Returns: List of meal plans with restaurant IDs and metadata
+
+14. **`update_meal_plan`** - Update an existing meal plan
+    * Parameters: plan_id, user_id, plan_name (optional), description (optional), restaurant_ids (optional), date (optional)
+    * Returns: Success confirmation
+
+15. **`delete_meal_plan`** - Delete a meal plan
+    * Parameters: plan_id, user_id
+    * Returns: Success confirmation
+
+### User Preferences Tools
+
+16. **`save_preferences`** - Save or update user dining preferences
+    * Parameters: user_id, preferred_cuisines, dietary_restrictions, budget_range, preferred_ambiance
+    * Returns: Success confirmation
+
+17. **`get_preferences`** - Retrieve user's saved preferences
+    * Parameters: user_id
+    * Returns: Preferences object with cuisines, restrictions, budget, ambiance
+
+**Database Schemas**: Lakebase Postgres table structures
+
+```sql
+-- Restaurant notes with ARRAY tags
+CREATE TABLE restaurant_notes (
+    note_id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    restaurant_id TEXT NOT NULL,
+    note_text TEXT NOT NULL,
+    tags TEXT[],  -- Postgres ARRAY type
+    personal_rating NUMERIC(2, 1) CHECK (personal_rating >= 0 AND personal_rating <= 5),
+    visit_date DATE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- User favorites
+CREATE TABLE favorites (
+    user_id TEXT NOT NULL,
+    restaurant_id TEXT NOT NULL,
+    restaurant_name TEXT NOT NULL,
+    saved_at TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (user_id, restaurant_id)
+);
+
+-- Meal plans
+CREATE TABLE meal_plans (
+    id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    plan_name TEXT NOT NULL,
+    description TEXT,
+    restaurant_ids TEXT[],  -- Postgres ARRAY type
+    date DATE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- User preferences
+CREATE TABLE user_preferences (
+    user_id TEXT PRIMARY KEY,
+    preferred_cuisines TEXT,
+    dietary_restrictions TEXT,
+    budget_range TEXT,
+    preferred_ambiance TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
 
 ---
 
@@ -393,40 +648,40 @@ The Flask backend exposes **6 REST API endpoints** for restaurant operations:
 
 ### Prerequisites
 
-* **Databricks workspace** with Apps V2 enabled
-* **Yelp Fusion API key** - [Get one here](https://www.yelp.com/developers/v3/manage_app) (Free tier: 5000 requests/day)
-* **Python 3.11+** runtime
-* **Flask** and dependencies (see `requirements.txt`)
+* Databricks workspace with Apps V2
+* Python 3.11+
+* Yelp Fusion API key (free tier: 5000 req/day)
 
-### Step 1: Get Yelp Fusion API Key
+### Step 1: Get Yelp API Key
 
 1. Go to [Yelp Fusion](https://www.yelp.com/developers/v3/manage_app)
-2. Create a new app (provide name + description)
-3. Copy your **API Key** (looks like: `AbCdEf123...`)
-4. **Authentication**: Bearer token in `Authorization` header
+2. Create app (name + description)
+3. Copy API Key (format: `AbCdEf123...`)
+4. Authentication uses Bearer token:
    ```bash
    Authorization: Bearer YOUR_API_KEY
    ```
-5. **Rate limits**: 5000 requests/day (free tier)
 
 ### Step 2: Set Up Lakebase Postgres
 
-**Lakebase is now integrated** for restaurant data, reviews, and vector embeddings:
+**Required tables**:
+- `restaurants` - core restaurant data
+- `restaurant_embeddings` - 384-dim vectors for semantic search
+- `review_embeddings` - review text with embeddings
+- `restaurant_notes` - user notes (tags, ratings, visit dates)
+- `favorites` - user favorites
+- `meal_plans` - meal planning data
+- `user_preferences` - user dietary preferences
 
-1. Create Lakebase database for restaurant data:
-   - `restaurants` table: Core restaurant information
-   - `restaurant_embeddings` table: pgvector embeddings for semantic search
-   - `review_embeddings` table: Review text with embeddings
+**Data ingestion**:
+1. Run `notebooks/ingest_restaurants_embeddings` to fetch from Yelp API and generate embeddings (SentenceTransformer)
+2. Run `notebooks/ingest_reviews_embeddings` for review data
 
-2. Run data ingestion notebooks:
-   - `notebooks/ingest_restaurants_embeddings`: Fetches from Yelp API and generates 384-dim embeddings using SentenceTransformer
-   - `notebooks/ingest_reviews_embeddings`: Ingests reviews with embeddings into `review_embeddings` table
-
-3. Configure Lakebase connection in Databricks Secrets:
-   ```bash
-   databricks secrets put-secret restaurant-app lakebase-connection-url
-   # Format: postgres://user:pass@host:port/database
-   ```
+**Configure connection**:
+```bash
+databricks secrets put-secret restaurant-app lakebase-connection-url
+# Format: postgres://user:pass@host:port/database
+```
 
 ### Step 3: Configure Databricks Secrets
 
@@ -475,35 +730,29 @@ databricks secrets put-secret restaurant-app yelp-api-key
    * URL: `https://<workspace>.cloud.databricks.com/apps/ai-restaurant-planner`
    * The web interface will load automatically
 
-**Application Features**:
-* 🔍 **Search Tab** - Find restaurants by location, cuisine, and filters
-* 🎯 **Recommend Tab** - Get AI-powered suggestions based on preferences
-* ⚖️ **Compare Tab** - Select and compare 2-5 restaurants side-by-side
-* 💡 **Real-time KPIs** - View statistics and insights
-* 📊 **Visual Scoring** - See transparent AI recommendation factors
+**UI Tabs**:
+* **Restaurant Assistant**: Natural language input → calls /api/search, /api/recommend, /api/meal-plans, /api/preferences
+* **Favorites**: Saved restaurants (backend ready, frontend not implemented)
 
 ---
 
-### Step 5: Test the Application
+### Step 5: Verify Deployment
 
-**Test Search**:
-1. Navigate to Search tab
-2. Enter location: "San Francisco, CA"
-3. Optional: Add cuisine (e.g., "Italian") or keywords
-4. Click Search
-5. View results with ratings, reviews, and categories
+**Test semantic search**:
+1. Restaurant Assistant tab
+2. Type: "Find Italian restaurants in San Francisco"
+3. Click Go
+4. Verify: Restaurant cards appear with ratings, categories
 
-**Test Comparison**:
-1. Search for restaurants
-2. Click on 2-5 restaurant cards to select them
-3. Click "Compare" in the floating action bar
-4. View AI-generated insights and side-by-side table
+**Test comparison**:
+1. Click 2-5 restaurant cards (highlights them)
+2. Click "Compare" in floating bar
+3. Verify: KPI cards, insights text, side-by-side table
 
-**Test Recommendations**:
-1. Navigate to Recommend tab
-2. Enter location and preferences
-3. Click Get Recommendations
-4. View ranked results with score breakdowns and evidence
+**Test recommendations**:
+1. Type: "Recommend romantic dinner spots"
+2. Click Go
+3. Verify: Top 3 scored results with 🥇/🥈/🥉 medals
 
 ## 🛠️ Technical Deep Dive
 
@@ -625,71 +874,69 @@ def generate_comparison_summary(restaurants):
 
 ## 🛍️ Usage Examples
 
-### Example 1: Search for Italian Restaurants
+### Example 1: Semantic Search
 
-**Steps**:
-1. Navigate to **Search** tab
-2. Enter location: "San Francisco, CA"
-3. Enter cuisine: "Italian"
-4. Select price filter: "$"
-5. Toggle "Open Now" if needed
-6. Click **Search**
+**Input**: "Find Italian restaurants in San Francisco under $20"
 
-**Result**: Grid of Italian restaurants with ratings, reviews, categories, and interactive selection
+**Backend flow**:
+1. SentenceTransformer generates 384-dim embedding from query text
+2. SQL: `SELECT * FROM restaurants WHERE ... ORDER BY embedding <=> query_embedding LIMIT 20`
+3. pgvector computes cosine similarity (smaller `<=>` = more similar)
+4. Returns restaurant cards with similarity scores
 
----
-
-### Example 2: Compare Top-Rated Options
-
-**Steps**:
-1. Search for restaurants (any criteria)
-2. Click on 3-4 restaurant cards to select them
-3. Floating compare bar appears showing selection count
-4. Click **Compare** button
-5. View AI-generated insights and comparison table
-
-**Result**: 
-* KPI cards showing highest rated, most popular, averages
-* Natural language summary highlighting key differences
-* Side-by-side table with ratings, reviews, prices, categories
-* Clear identification of best options for different criteria
+**Frontend display**: Grid of cards with ratings, reviews, categories, similarity scores
 
 ---
 
-### Example 3: Get AI Recommendations
+### Example 2: Side-by-Side Comparison
 
-**Steps**:
-1. Navigate to **Recommend** tab
-2. Enter location: "Seattle, WA"
-3. Select cuisines: "Italian", "French"
-4. Set max price: "$"
-5. Set min rating: 4.0
-6. Click **Get Recommendations**
+**Actions**:
+1. Search "pizza in SF"
+2. Click 3 restaurant cards (they highlight)
+3. Click "Compare" button in floating bar
 
-**Result**: Top 3 personalized picks displayed as premium cards:
-* 🥇 Gold medal winner with special gold border
-* 🥈 Silver and 🥉 bronze for #2 and #3
-* Large prominent score percentages with gradient styling
-* Factor breakdown in clean grid: rating, popularity, cuisine match, price match
-* Evidence explaining why each restaurant was selected
-* Enhanced card design with hover effects and smooth animations
+**Backend flow** (`POST /api/compare`):
+1. Fetch full details for 3 restaurants
+2. Generate KPIs: highest_rated, most_popular, avg_rating, price_range
+3. Generate text: "Among these, [X] has highest rating (4.7), [Y] most reviews (450)..."
+4. Return JSON with restaurants, kpis, insights
+
+**Frontend display**: KPI cards, text summary, side-by-side table
+
+---
+
+### Example 3: Scored Recommendations
+
+**Input**: "Recommend romantic dinner spots"
+
+**Backend flow** (`POST /api/recommend`):
+1. Extract preferences: cuisines=["Italian", "French"], ambiance="romantic"
+2. Search matching restaurants
+3. Score each with 4-factor formula:
+   * rating_score = (4.5 / 5.0) × 100 = 90%
+   * popularity_score = log(230) / log(max_reviews) × 100 = 82%
+   * cuisine_match_score = 100% (exact match)
+   * price_match_score = 70% (within budget)
+   * **total_score** = 0.35×90 + 0.25×82 + 0.30×100 + 0.10×70 = 85.5%
+4. Sort by total_score descending, return top 3
+
+**Frontend display**: 🥇/🥈/🥉 medals, score percentages, factor breakdown, evidence
 
 ---
 
 ## 📚 Documentation
 
-* **This README**: Comprehensive guide covering setup, deployment, API reference, and usage
-* **app.yaml**: Databricks App configuration (in `/app` directory)
-* **In-code documentation**: Flask routes and functions include docstrings
+* `README.md`: This file (setup, API reference, architecture)
+* `app/app.yaml`: Databricks Apps configuration
+* `app/app.py`: Flask routes with inline docstrings
 
 ## 🐛 Known Limitations
 
-1. **Daily Data Refresh**: Restaurant data updated once daily via ingestion job (not real-time)
-2. **User Favorites**: Backend endpoint exists but frontend integration not yet implemented
-3. **Geographic Scope**: Optimized for US locations (Yelp Fusion API constraint)
-4. **Selection Limit**: Maximum 5 restaurants can be selected for questions at once
-5. **No Authentication**: Single-user mode; multi-user features require auth implementation
-6. **Review Coverage**: Q&A limited to reviews already ingested in Lakebase
+1. **Static data**: Restaurants/reviews ingested once daily, not live from Yelp
+2. **US-centric**: Yelp Fusion API optimized for US locations
+3. **5-restaurant Q&A cap**: `/api/ask` accepts maximum 5 restaurant_ids
+4. **No auth**: Single-user mode (user_id='anonymous'). Multi-user needs Databricks auth header
+5. **Review lag**: Q&A answers only from reviews in `review_embeddings` table
 
 ---
 
@@ -701,14 +948,13 @@ MIT License - feel free to use for learning and reference.
 
 ## 📊 Project Stats
 
-* **Architecture**: Flask web application with REST API and Lakebase backend
-* **Frontend**: Single-page app with vanilla JavaScript
-* **Backend**: Python Flask with 6 API endpoints
-* **Data Layer**: Lakebase Postgres with pgvector extension for cosine similarity semantic search
-* **AI Models**: SentenceTransformer (embeddings), Databricks Foundation Models (Q&A)
-* **Scoring Factors**: 4 (rating, popularity, cuisine match, price match)
-* **Deployment**: Databricks Apps V2
-* **UI Components**: Tabbed interface, interactive cards, comparison table, Q&A modal, KPI dashboard
-* **Design**: Modern responsive design with vibrant color scheme
+* **Stack**: Flask + vanilla JS + Lakebase Postgres
+* **API**: 17 REST endpoints (Flask) + 17 MCP tools (Python)
+* **Tables**: 7 (restaurants, restaurant_embeddings, review_embeddings, restaurant_notes, favorites, meal_plans, user_preferences)
+* **Embeddings**: SentenceTransformer all-MiniLM-L6-v2 (384-dim)
+* **Vector search**: pgvector `<=>` operator (cosine similarity)
+* **LLM**: Databricks Foundation Models API (Meta Llama 3.1 70B)
+* **Scoring**: 4-factor weighted sum (rating 35%, popularity 25%, cuisine 30%, price 10%)
+* **Deployment**: Databricks Apps V2 (container runtime)
 
 ---

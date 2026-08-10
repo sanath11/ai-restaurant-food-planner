@@ -57,6 +57,26 @@ All using CSS primitives (no custom framework):
 - `GET /api/favorites` - User's saved restaurants
 - `GET /healthz` - Health check
 
+## Features
+
+### Restaurant Notes
+Users can save personal notes for any restaurant with:
+- **Rich text notes** - Share experiences and impressions
+- **Tags** - Organize notes with custom tags (e.g., "favorite", "date-night", "must-try")
+- **Personal ratings** - Rate restaurants 0-5 independently of Yelp ratings
+- **Visit dates** - Track when you visited
+- **Full CRUD** - Create, read, update, and delete notes
+
+Notes are displayed in a modal with a clean, organized UI:
+- Notes button on each restaurant card with count badge
+- Add new notes with inline form
+- Edit and delete existing notes
+- Filter notes by restaurant or view all
+
+**Backend**: PostgreSQL table `restaurant_notes` via Lakebase  
+**Frontend**: Modal UI with form validation and real-time updates  
+**Documentation**: See [FRONTEND_NOTES_UI.txt](FRONTEND_NOTES_UI.txt) for integration guide
+
 ## Setup
 
 1. Configure secrets in Databricks:

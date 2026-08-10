@@ -5,13 +5,18 @@
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Drop existing tables if they exist (to ensure clean schema)
+DROP TABLE IF EXISTS review_embeddings CASCADE;
+DROP TABLE IF EXISTS reviews CASCADE;
+DROP TABLE IF EXISTS restaurant_embeddings CASCADE;
+
 -- Create restaurant embeddings table for semantic search
 -- IMPORTANT: Replace {{EMBEDDING_DIM}} below with 384 for all-MiniLM-L6-v2
 CREATE TABLE IF NOT EXISTS restaurant_embeddings (
     id TEXT PRIMARY KEY REFERENCES restaurants(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     categories TEXT,
-    embedding VECTOR({{EMBEDDING_DIM}}) NOT NULL,
+    embedding VECTOR(384) NOT NULL,
     model_name TEXT NOT NULL,
     embedded_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -41,7 +46,7 @@ CREATE TABLE IF NOT EXISTS review_embeddings (
     embedding_id SERIAL PRIMARY KEY,
     restaurant_id TEXT NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
     review_text TEXT NOT NULL,
-    embedding VECTOR({{EMBEDDING_DIM}}) NOT NULL,
+    embedding VECTOR(384) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

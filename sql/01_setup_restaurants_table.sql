@@ -1,6 +1,9 @@
 -- Setup script for restaurants table
 -- Run this manually in your Lakebase Postgres database before running the ingestion notebook
 
+-- Drop existing table if it exists (to ensure clean schema)
+DROP TABLE IF EXISTS restaurants CASCADE;
+
 -- Create restaurants table to store Yelp business data
 CREATE TABLE IF NOT EXISTS restaurants (
     id TEXT PRIMARY KEY,

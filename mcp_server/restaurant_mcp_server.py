@@ -1,12 +1,35 @@
 """AI Restaurant & Food Planner MCP Server.
 
 Exposes restaurant planning tools over MCP (Model Context Protocol) for
-Databricks Agent Bricks agents:
+Databricks Agent Bricks agents.
+
+Restaurant Discovery & Search:
     - search_restaurants(location, term, categories, price, open_now, limit)
     - get_restaurant_details(restaurant_id, include_reviews)
     - compare_restaurants(restaurant_ids, comparison_factors)
     - semantic_restaurant_search(query, location, min_rating, max_price_level, limit)
     - recommend_restaurant(user_id, location, preferences, user_location)
+
+Personal Notes:
+    - save_restaurant_note(user_id, restaurant_id, note_text, tags, personal_rating, visit_date)
+    - get_restaurant_notes(user_id, restaurant_id, limit)
+    - update_restaurant_note(note_id, user_id, note_text, tags, personal_rating, visit_date)
+    - delete_restaurant_note(note_id, user_id)
+
+Favorites:
+    - save_favorite(user_id, restaurant_id, notes)
+    - get_favorites(user_id)
+    - delete_favorite(user_id, restaurant_id)
+
+Meal Plans:
+    - create_meal_plan(user_id, plan_name, restaurant_ids, description, date)
+    - get_meal_plans(user_id)
+    - update_meal_plan(plan_id, user_id, plan_name, description, restaurant_ids, date)
+    - delete_meal_plan(plan_id, user_id)
+
+User Preferences:
+    - save_preferences(user_id, preferred_cuisines, dietary_restrictions, budget_range, preferred_ambiance)
+    - get_preferences(user_id)
 
 Backed by Yelp Fusion API and Lakebase Postgres with pgvector embeddings.
 
@@ -28,40 +51,9 @@ from recommendation_engine import RecommendationEngine
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ===== DATABRICKS SCHEMA COMPATIBILITY PATCH =====
-# WHY: Databricks Agent Bricks requires "additionalProperties": false on ALL
-# JSON schema objects with "properties" fields. FastMCP generates schemas without this,
-# causing tool registration to fail. This patch intercepts schema generation and adds
-# the required field.
-#
-# MUST run BEFORE creating the mcp instance so the patch is active during registration.
-
-def fix_databricks_schemas(obj):
-    """Recursively set additionalProperties: false in all schema objects."""
-    if isinstance(obj, dict):
-        if 'properties' in obj:
-            obj['additionalProperties'] = False
-        for value in obj.values():
-            fix_databricks_schemas(value)
-    elif isinstance(obj, list):
-        for item in obj:
-            fix_databricks_schemas(item)
-
-# Monkey-patch FastMCP._get_tools to inject the fix
-from fastmcp.server.server import FastMCP as FastMCPClass
-original_get_tools = FastMCPClass._get_tools
-
-def patched_get_tools(self):
-    """Intercept tool schema generation and fix for Databricks."""
-    tools = original_get_tools(self)
-    for tool in tools:
-        if hasattr(tool, 'inputSchema') and tool.inputSchema:
-            fix_databricks_schemas(tool.inputSchema)
-    return tools
-
-FastMCPClass._get_tools = patched_get_tools
-logger.info("✅ Installed Databricks schema compatibility patch on FastMCP")
-# ===== END PATCH =====
+# Note: FastMCP handles schema generation automatically.
+# If Databricks Agent Bricks requires specific schema properties,
+# those can be configured through FastMCP's built-in mechanisms.
 
 mcp = FastMCP("restaurant-planner")
 
@@ -594,6 +586,856 @@ def recommend_restaurant(
             "success": False,
             "error": f"Recommendation failed: {str(e)}"
         }
+@mcp.tool
+def save_restaurant_note(
+    user_id: str,
+    restaurant_id: str,
+    note_text: str,
+    tags: list = None,
+    personal_rating: float = None,
+    visit_date: str = None
+) -> dict:
+    """
+    Save a personal note for a restaurant.
+    
+    Use this to record observations, memories, or recommendations about a restaurant visit.
+    Notes are private to each user and can include tags, personal ratings, and visit dates.
+    
+    Args:
+        user_id: Your user identifier
+        restaurant_id: Yelp business ID (from search results)
+        note_text: Your note content (e.g., "Great ambiance, but a bit pricey")
+        tags: Optional tags (e.g., ["favorite", "date-night", "vegetarian-friendly"])
+        personal_rating: Optional personal rating 0-5 (independent of Yelp rating)
+        visit_date: Optional visit date in YYYY-MM-DD format (e.g., "2024-03-15")
+    
+    Returns:
+        Dict with success status and note_id if successful.
+    
+    Example:
+        save_restaurant_note(
+            user_id="user123",
+            restaurant_id="okaeri-japanese-bistro-san-francisco-3",
+            note_text="Amazing omakase experience! Chef was very friendly.",
+            tags=["favorite", "special-occasion"],
+            personal_rating=5.0,
+            visit_date="2024-03-10"
+        )
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Notes feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable notes"
+        }
+    
+    if not note_text or not note_text.strip():
+        return {
+            "success": False,
+            "error": "note_text cannot be empty"
+        }
+    
+    # Validate personal_rating if provided
+    if personal_rating is not None:
+        if not (0 <= personal_rating <= 5):
+            return {
+                "success": False,
+                "error": "personal_rating must be between 0 and 5"
+            }
+    
+    try:
+        note_id = lakebase_client.save_note(
+            user_id=user_id,
+            restaurant_id=restaurant_id,
+            note_text=note_text.strip(),
+            tags=tags,
+            personal_rating=personal_rating,
+            visit_date=visit_date
+        )
+        
+        if note_id:
+            return {
+                "success": True,
+                "note_id": note_id,
+                "message": f"Note saved successfully for restaurant {restaurant_id}"
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Failed to save note to database"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error saving note: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to save note: {str(e)}"
+        }
+
+
+@mcp.tool
+def get_restaurant_notes(
+    user_id: str,
+    restaurant_id: str = None,
+    limit: int = 100
+) -> dict:
+    """
+    Get your saved notes for restaurants.
+    
+    Retrieve all your notes or filter by a specific restaurant.
+    Notes include the note text, tags, personal rating, visit date, and restaurant details.
+    
+    Args:
+        user_id: Your user identifier
+        restaurant_id: Optional restaurant ID to filter by specific restaurant
+        limit: Maximum number of notes to return (default 100, max 500)
+    
+    Returns:
+        Dict with success status and array of notes.
+        Each note includes: note_id, note_text, tags, personal_rating, visit_date,
+        created_at, updated_at, restaurant_name, restaurant_rating, categories.
+    
+    Example:
+        # Get all notes
+        get_restaurant_notes(user_id="user123")
+        
+        # Get notes for specific restaurant
+        get_restaurant_notes(
+            user_id="user123",
+            restaurant_id="okaeri-japanese-bistro-san-francisco-3"
+        )
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Notes feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable notes"
+        }
+    
+    try:
+        notes = lakebase_client.get_user_notes(
+            user_id=user_id,
+            restaurant_id=restaurant_id,
+            limit=min(limit, 500)
+        )
+        
+        return {
+            "success": True,
+            "total": len(notes),
+            "user_id": user_id,
+            "restaurant_id": restaurant_id,
+            "notes": notes
+        }
+    
+    except Exception as e:
+        logger.error(f"Error getting notes: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to get notes: {str(e)}"
+        }
+
+
+@mcp.tool
+def update_restaurant_note(
+    note_id: int,
+    user_id: str,
+    note_text: str = None,
+    tags: list = None,
+    personal_rating: float = None,
+    visit_date: str = None
+) -> dict:
+    """
+    Update an existing restaurant note.
+    
+    Only the note owner (matching user_id) can update a note.
+    Provide only the fields you want to update; others remain unchanged.
+    
+    Args:
+        note_id: Note ID to update (from get_restaurant_notes)
+        user_id: Your user identifier (must match note owner)
+        note_text: New note text (optional)
+        tags: New tags (optional)
+        personal_rating: New personal rating 0-5 (optional)
+        visit_date: New visit date YYYY-MM-DD (optional)
+    
+    Returns:
+        Dict with success status.
+    
+    Example:
+        update_restaurant_note(
+            note_id=42,
+            user_id="user123",
+            note_text="Updated: Still my favorite sushi spot!",
+            tags=["favorite", "date-night", "must-try"]
+        )
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Notes feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable notes"
+        }
+    
+    # Validate personal_rating if provided
+    if personal_rating is not None:
+        if not (0 <= personal_rating <= 5):
+            return {
+                "success": False,
+                "error": "personal_rating must be between 0 and 5"
+            }
+    
+    # Check at least one field is provided
+    if all(v is None for v in [note_text, tags, personal_rating, visit_date]):
+        return {
+            "success": False,
+            "error": "At least one field must be provided to update",
+            "hint": "Provide note_text, tags, personal_rating, or visit_date"
+        }
+    
+    try:
+        success = lakebase_client.update_note(
+            note_id=note_id,
+            user_id=user_id,
+            note_text=note_text.strip() if note_text else None,
+            tags=tags,
+            personal_rating=personal_rating,
+            visit_date=visit_date
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "note_id": note_id,
+                "message": f"Note {note_id} updated successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Note {note_id} not found or you don't have permission to update it"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error updating note: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to update note: {str(e)}"
+        }
+
+
+@mcp.tool
+def delete_restaurant_note(
+    note_id: int,
+    user_id: str
+) -> dict:
+    """
+    Delete a restaurant note.
+    
+    Only the note owner (matching user_id) can delete a note.
+    This action is permanent and cannot be undone.
+    
+    Args:
+        note_id: Note ID to delete (from get_restaurant_notes)
+        user_id: Your user identifier (must match note owner)
+    
+    Returns:
+        Dict with success status.
+    
+    Example:
+        delete_restaurant_note(note_id=42, user_id="user123")
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Notes feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable notes"
+        }
+    
+    try:
+        success = lakebase_client.delete_note(
+            note_id=note_id,
+            user_id=user_id
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "note_id": note_id,
+                "message": f"Note {note_id} deleted successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Note {note_id} not found or you don't have permission to delete it"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error deleting note: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to delete note: {str(e)}"
+        }
+
+
+
+
+# ===== FAVORITES TOOLS =====
+
+@mcp.tool
+def save_favorite(
+    user_id: str,
+    restaurant_id: str,
+    notes: str = None
+) -> dict:
+    """
+    Save a restaurant as a favorite.
+    
+    Mark a restaurant as a favorite for quick access later. You can optionally
+    add notes about why you like it or what to remember.
+    
+    Args:
+        user_id: Your user identifier
+        restaurant_id: Yelp business ID (from search results)
+        notes: Optional notes about this favorite (e.g., "Best pizza in town", "Great date spot")
+    
+    Returns:
+        Dict with success status.
+    
+    Example:
+        save_favorite(
+            user_id="user123",
+            restaurant_id="okaeri-japanese-bistro-san-francisco-3",
+            notes="Amazing omakase! Must try the chef's special."
+        )
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Favorites feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable favorites"
+        }
+    
+    try:
+        success = lakebase_client.save_favorite(
+            user_id=user_id,
+            restaurant_id=restaurant_id,
+            notes=notes
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "restaurant_id": restaurant_id,
+                "message": f"Restaurant {restaurant_id} added to favorites"
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Failed to save favorite to database"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error saving favorite: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to save favorite: {str(e)}"
+        }
+
+
+@mcp.tool
+def get_favorites(
+    user_id: str
+) -> dict:
+    """
+    Get all your saved favorite restaurants.
+    
+    Retrieve your complete list of favorite restaurants with their details,
+    notes, and when you added them.
+    
+    Args:
+        user_id: Your user identifier
+    
+    Returns:
+        Dict with success status and array of favorites.
+        Each favorite includes: restaurant_id, name, rating, price, categories,
+        address, city, notes, created_at.
+    
+    Example:
+        get_favorites(user_id="user123")
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Favorites feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable favorites"
+        }
+    
+    try:
+        favorites = lakebase_client.get_user_favorites(user_id=user_id)
+        
+        return {
+            "success": True,
+            "total": len(favorites),
+            "user_id": user_id,
+            "favorites": favorites
+        }
+    
+    except Exception as e:
+        logger.error(f"Error getting favorites: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to get favorites: {str(e)}"
+        }
+
+
+@mcp.tool
+def delete_favorite(
+    user_id: str,
+    restaurant_id: str
+) -> dict:
+    """
+    Remove a restaurant from your favorites.
+    
+    This action is permanent and cannot be undone.
+    
+    Args:
+        user_id: Your user identifier
+        restaurant_id: Yelp business ID to remove from favorites
+    
+    Returns:
+        Dict with success status.
+    
+    Example:
+        delete_favorite(user_id="user123", restaurant_id="some-restaurant-id")
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Favorites feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable favorites"
+        }
+    
+    try:
+        success = lakebase_client.remove_favorite(
+            user_id=user_id,
+            restaurant_id=restaurant_id
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "restaurant_id": restaurant_id,
+                "message": f"Restaurant {restaurant_id} removed from favorites"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Restaurant {restaurant_id} not found in favorites"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error deleting favorite: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to delete favorite: {str(e)}"
+        }
+
+
+# ===== MEAL PLAN TOOLS =====
+
+@mcp.tool
+def create_meal_plan(
+    user_id: str,
+    plan_name: str,
+    restaurant_ids: list,
+    description: str = None,
+    date: str = None
+) -> dict:
+    """
+    Create a meal plan with multiple restaurants.
+    
+    Organize restaurants into a meal plan for events, trips, or weekly dining.
+    Great for planning a food tour, date night itinerary, or group dining events.
+    
+    Args:
+        user_id: Your user identifier
+        plan_name: Name for this meal plan (e.g., "SF Food Tour 2024", "Date Night Ideas")
+        restaurant_ids: List of Yelp business IDs to include in the plan
+        description: Optional description of the plan (e.g., "Best Italian restaurants for anniversary")
+        date: Optional date for the plan in YYYY-MM-DD format (e.g., "2024-06-15")
+    
+    Returns:
+        Dict with success status and plan_id if successful.
+    
+    Example:
+        create_meal_plan(
+            user_id="user123",
+            plan_name="Weekend Brunch Tour",
+            restaurant_ids=["cafe-a-sf", "bistro-b-sf", "diner-c-sf"],
+            description="Best brunch spots in the Mission",
+            date="2024-03-23"
+        )
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Meal plans feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable meal plans"
+        }
+    
+    if not plan_name or not plan_name.strip():
+        return {
+            "success": False,
+            "error": "plan_name cannot be empty"
+        }
+    
+    if not restaurant_ids or len(restaurant_ids) == 0:
+        return {
+            "success": False,
+            "error": "restaurant_ids must contain at least one restaurant"
+        }
+    
+    try:
+        plan_id = lakebase_client.create_meal_plan(
+            user_id=user_id,
+            plan_name=plan_name.strip(),
+            restaurant_ids=restaurant_ids,
+            description=description,
+            date=date
+        )
+        
+        if plan_id > 0:
+            return {
+                "success": True,
+                "plan_id": plan_id,
+                "message": f"Meal plan '{plan_name}' created successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Failed to create meal plan in database"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error creating meal plan: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to create meal plan: {str(e)}"
+        }
+
+
+@mcp.tool
+def get_meal_plans(
+    user_id: str
+) -> dict:
+    """
+    Get all your meal plans.
+    
+    Retrieve your complete list of meal plans with their restaurant IDs,
+    descriptions, and dates.
+    
+    Args:
+        user_id: Your user identifier
+    
+    Returns:
+        Dict with success status and array of meal plans.
+        Each plan includes: id, plan_name, description, restaurant_ids (array),
+        date, created_at.
+    
+    Example:
+        get_meal_plans(user_id="user123")
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Meal plans feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable meal plans"
+        }
+    
+    try:
+        plans = lakebase_client.get_user_meal_plans(user_id=user_id)
+        
+        return {
+            "success": True,
+            "total": len(plans),
+            "user_id": user_id,
+            "meal_plans": plans
+        }
+    
+    except Exception as e:
+        logger.error(f"Error getting meal plans: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to get meal plans: {str(e)}"
+        }
+
+
+@mcp.tool
+def update_meal_plan(
+    plan_id: int,
+    user_id: str,
+    plan_name: str = None,
+    description: str = None,
+    restaurant_ids: list = None,
+    date: str = None
+) -> dict:
+    """
+    Update an existing meal plan.
+    
+    Only the plan owner (matching user_id) can update a meal plan.
+    Provide only the fields you want to update; others remain unchanged.
+    
+    Args:
+        plan_id: Meal plan ID to update (from get_meal_plans)
+        user_id: Your user identifier (must match plan owner)
+        plan_name: New plan name (optional)
+        description: New description (optional)
+        restaurant_ids: New list of restaurant IDs (optional)
+        date: New date YYYY-MM-DD (optional)
+    
+    Returns:
+        Dict with success status.
+    
+    Example:
+        update_meal_plan(
+            plan_id=5,
+            user_id="user123",
+            description="Updated: Added vegetarian options",
+            restaurant_ids=["restaurant-a", "restaurant-b", "restaurant-c"]
+        )
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Meal plans feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable meal plans"
+        }
+    
+    # Check at least one field is provided
+    if all(v is None for v in [plan_name, description, restaurant_ids, date]):
+        return {
+            "success": False,
+            "error": "At least one field must be provided to update",
+            "hint": "Provide plan_name, description, restaurant_ids, or date"
+        }
+    
+    try:
+        success = lakebase_client.update_meal_plan(
+            plan_id=plan_id,
+            user_id=user_id,
+            plan_name=plan_name.strip() if plan_name else None,
+            description=description,
+            restaurant_ids=restaurant_ids,
+            date=date
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "plan_id": plan_id,
+                "message": f"Meal plan {plan_id} updated successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Meal plan {plan_id} not found or you don't have permission to update it"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error updating meal plan: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to update meal plan: {str(e)}"
+        }
+
+
+@mcp.tool
+def delete_meal_plan(
+    plan_id: int,
+    user_id: str
+) -> dict:
+    """
+    Delete a meal plan.
+    
+    Only the plan owner (matching user_id) can delete a meal plan.
+    This action is permanent and cannot be undone.
+    
+    Args:
+        plan_id: Meal plan ID to delete (from get_meal_plans)
+        user_id: Your user identifier (must match plan owner)
+    
+    Returns:
+        Dict with success status.
+    
+    Example:
+        delete_meal_plan(plan_id=5, user_id="user123")
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Meal plans feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable meal plans"
+        }
+    
+    try:
+        success = lakebase_client.delete_meal_plan(
+            plan_id=plan_id,
+            user_id=user_id
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "plan_id": plan_id,
+                "message": f"Meal plan {plan_id} deleted successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Meal plan {plan_id} not found or you don't have permission to delete it"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error deleting meal plan: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to delete meal plan: {str(e)}"
+        }
+
+
+# ===== USER PREFERENCES TOOLS =====
+
+@mcp.tool
+def save_preferences(
+    user_id: str,
+    preferred_cuisines: str = None,
+    dietary_restrictions: str = None,
+    budget_range: str = None,
+    preferred_ambiance: str = None
+) -> dict:
+    """
+    Save or update your dining preferences.
+    
+    Set your preferences once and get better personalized recommendations.
+    Your preferences persist across sessions.
+    
+    Args:
+        user_id: Your user identifier
+        preferred_cuisines: Comma-separated cuisines you like (e.g., "Italian, Japanese, Mexican")
+        dietary_restrictions: Comma-separated dietary restrictions (e.g., "Vegetarian, Gluten-free")
+        budget_range: Budget range as dollar signs (e.g., "$", "$", "$$", "$$")
+        preferred_ambiance: Comma-separated ambiance preferences (e.g., "Casual, Romantic, Family-friendly")
+    
+    Returns:
+        Dict with success status.
+    
+    Example:
+        save_preferences(
+            user_id="user123",
+            preferred_cuisines="Italian, French, Japanese",
+            dietary_restrictions="Vegetarian",
+            budget_range="$",
+            preferred_ambiance="Casual, Romantic"
+        )
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Preferences feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable preferences"
+        }
+    
+    try:
+        success = lakebase_client.save_user_preferences(
+            user_id=user_id,
+            preferred_cuisines=preferred_cuisines,
+            dietary_restrictions=dietary_restrictions,
+            budget_range=budget_range,
+            preferred_ambiance=preferred_ambiance
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": "Preferences saved successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Failed to save preferences to database"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error saving preferences: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to save preferences: {str(e)}"
+        }
+
+
+@mcp.tool
+def get_preferences(
+    user_id: str
+) -> dict:
+    """
+    Get your saved dining preferences.
+    
+    Retrieve your current preference settings for cuisines, budget,
+    dietary restrictions, and ambiance.
+    
+    Args:
+        user_id: Your user identifier
+    
+    Returns:
+        Dict with success status and preferences object.
+        Preferences include: preferred_cuisines, dietary_restrictions,
+        budget_range, preferred_ambiance.
+    
+    Example:
+        get_preferences(user_id="user123")
+    """
+    if not lakebase_client:
+        return {
+            "success": False,
+            "error": "Preferences feature requires Lakebase connection",
+            "hint": "Configure LAKEBASE_URL secret to enable preferences"
+        }
+    
+    try:
+        preferences = lakebase_client.get_user_preferences(user_id=user_id)
+        
+        return {
+            "success": True,
+            "user_id": user_id,
+            "preferences": preferences
+        }
+    
+    except Exception as e:
+        logger.error(f"Error getting preferences: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to get preferences: {str(e)}"
+        }
+
+
+# ===== USAGE INSTRUCTIONS =====
+# After adding these tools, update the module docstring at the top of the file:
+#
+# """AI Restaurant & Food Planner MCP Server.
+# 
+# Exposes restaurant planning tools over MCP (Model Context Protocol) for
+# Databricks Agent Bricks agents:
+#     - search_restaurants(location, term, categories, price, open_now, limit)
+#     - get_restaurant_details(restaurant_id, include_reviews)
+#     - compare_restaurants(restaurant_ids, comparison_factors)
+#     - semantic_restaurant_search(query, location, min_rating, max_price_level, limit)
+#     - recommend_restaurant(user_id, location, preferences, user_location)
+#     - save_restaurant_note(user_id, restaurant_id, note_text, tags, personal_rating, visit_date)
+#     - get_restaurant_notes(user_id, restaurant_id, limit)
+#     - update_restaurant_note(note_id, user_id, note_text, tags, personal_rating, visit_date)
+#     - delete_restaurant_note(note_id, user_id)
+# 
+# Backed by Yelp Fusion API and Lakebase Postgres with pgvector embeddings.
+# """
 
 
 if __name__ == "__main__":
