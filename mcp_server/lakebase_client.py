@@ -179,17 +179,10 @@ class LakebaseClient:
             return [dict(row) for row in results]
         except Exception as e:
             logger.error(f"Error in semantic search: {e}", exc_info=True)
-            # Try to rollback in case of error
-            try:
-                conn.rollback()
-            except:
-                pass
+            conn.rollback()
             return []
         finally:
-            try:
-                cursor.close()
-            except:
-                pass
+            cursor.close()
     
     def get_restaurant_by_id(self, restaurant_id: str) -> Optional[Dict[str, Any]]:
         """

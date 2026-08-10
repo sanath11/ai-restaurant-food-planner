@@ -16,6 +16,13 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# Scoring constants - explicit defaults to avoid magic numbers
+NEUTRAL_SCORE = 0.5  # Score when data is missing or neutral preference
+MAX_YELP_RATING = 5.0  # Yelp's 5-star rating scale
+POPULARITY_LOG_THRESHOLD = 3.0  # log10(1000) = 3.0, normalizes review counts to 0-1
+DEFAULT_MAX_DISTANCE_KM = 10.0  # Reasonable walking/driving distance in urban areas
+EARTH_RADIUS_KM = 6371  # Earth's radius for Haversine distance calculation
+
 
 class RecommendationEngine:
     """Multi-factor scoring engine for restaurant recommendations."""
@@ -65,8 +72,8 @@ class RecommendationEngine:
             Normalized score (0-1)
         """
         if rating is None:
-            return 0.5  # Neutral score for missing data
-        return min(rating / 5.0, 1.0)
+            return NEUTRAL_SCORE
+        return min(rating / MAX_YELP_RATING, 1.0)
     
     def score_popularity(self, review_count: int) -> float:
         """
